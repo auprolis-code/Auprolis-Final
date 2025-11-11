@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bidding Interface - Auprolis</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/bidding.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <!-- Bidding Modal -->
+    <div class="modal show" id="biddingModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3 id="biddingModalTitle">Place Your Bid</h3>
+                <button class="modal-close" id="biddingModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="bidding-content" id="biddingContent">
+                    <!-- Bidding interface will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bid History Modal -->
+    <div class="modal" id="bidHistoryModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>Bid History</h3>
+                <button class="modal-close" id="bidHistoryModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="bid-history-content" id="bidHistoryContent">
+                    <!-- Bid history will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bid Confirmation Modal -->
+    <div class="modal" id="bidConfirmationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Your Bid</h3>
+                <button class="modal-close" id="bidConfirmationModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="bid-confirmation-content" id="bidConfirmationContent">
+                    <!-- Bid confirmation will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/firebase-config.js"></script>
+    <script src="assets/js/bidding.js"></script>
+    <script src="assets/js/script.js"></script>
+</body>
+</html>

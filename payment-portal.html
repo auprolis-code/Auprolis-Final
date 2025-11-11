@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment - Auprolis</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/auth.css">
+    <link rel="stylesheet" href="assets/css/payment.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html">
+                    <h2>Auprolis</h2>
+                </a>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="index.html#features" class="nav-link">Features</a>
+                <a href="index.html#pricing" class="nav-link">Pricing</a>
+                <a href="index.html#auctions" class="nav-link">Auctions</a>
+            </div>
+            <div class="nav-auth">
+                <a href="login.html" class="nav-link">Sign In</a>
+                <a href="signup.html" class="nav-link signup-btn">Sign Up</a>
+            </div>
+            <div class="hamburger" id="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Payment Section -->
+    <section class="payment-section">
+        <div class="payment-container">
+            <div class="payment-card">
+                <div class="payment-header">
+                    <h1>Complete Your Subscription</h1>
+                    <p>Secure payment processing to activate your premium account</p>
+                </div>
+
+                <!-- Subscription Summary -->
+                <div class="subscription-summary">
+                    <div class="plan-details">
+                        <h3>Premium Subscription</h3>
+                        <div class="plan-features">
+                            <div class="feature-item">
+                                <span class="feature-icon">✓</span>
+                                <span>Full asset details and specifications</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">✓</span>
+                                <span>Real-time bidding on all auctions</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">✓</span>
+                                <span>Direct contact with sellers</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">✓</span>
+                                <span>Email and SMS alerts</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">✓</span>
+                                <span>Download PDF reports</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">✓</span>
+                                <span>AI valuation reports</span>
+                            </div>
+                            <div class="feature-item">
+                                <span class="feature-icon">✓</span>
+                                <span>Priority support</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pricing-details">
+                        <div class="price-breakdown">
+                            <div class="price-item">
+                                <span>Monthly Subscription</span>
+                                <span class="price-amount">BWP 250</span>
+                            </div>
+                            <div class="price-item total">
+                                <span>Total Amount</span>
+                                <span class="price-amount">BWP 250</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Form -->
+                <div class="payment-form">
+                    <h3>Payment Information</h3>
+                    
+                    <form id="paymentForm">
+                        <div class="form-group">
+                            <label for="cardNumber">Card Number</label>
+                            <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="expiryDate">Expiry Date</label>
+                                <input type="text" id="expiryDate" placeholder="MM/YY" required>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="cvv">CVV</label>
+                                <input type="text" id="cvv" placeholder="123" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="cardName">Cardholder Name</label>
+                            <input type="text" id="cardName" placeholder="John Doe" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="billingEmail">Billing Email</label>
+                            <input type="email" id="billingEmail" placeholder="john@example.com" required>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Payment Methods -->
+                <div class="payment-methods">
+                    <h3>Payment Method</h3>
+                    <div class="payment-options">
+                        <button class="payment-method-btn active" data-method="dpo">
+                            <div class="method-icon">💳</div>
+                            <div class="method-info">
+                                <div class="method-name">DPO Group</div>
+                                <div class="method-description">Secure payment processing</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Payment Actions -->
+                <div class="payment-actions">
+                    <button class="payment-btn" id="processPayment">
+                        <span class="btn-text">Complete Payment - BWP 250</span>
+                        <span class="btn-spinner" style="display: none;">
+                            <svg width="20" height="20" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" stroke="#fff" stroke-width="2" fill="none" stroke-dasharray="31.416" stroke-dashoffset="31.416">
+                                    <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                                    <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                                </circle>
+                            </svg>
+                        </span>
+                    </button>
+                    
+                    <div class="security-notice">
+                        <div class="security-icon">🔒</div>
+                        <p>Your payment information is encrypted and secure. We use industry-standard SSL encryption.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Payment Processing Modal -->
+    <div class="modal" id="processingModal">
+        <div class="modal-content">
+            <div class="modal-body">
+                <div class="processing-content">
+                    <div class="processing-spinner">
+                        <svg width="40" height="40" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke="#2563eb" stroke-width="2" fill="none" stroke-dasharray="31.416" stroke-dashoffset="31.416">
+                                <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                                <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                            </circle>
+                        </svg>
+                    </div>
+                    <h3>Processing Payment</h3>
+                    <p>Please wait while we process your payment. Do not close this window.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error/Success Messages -->
+    <div id="paymentMessages" class="payment-messages"></div>
+
+    <script src="assets/js/firebase-config.js"></script>
+    <script src="assets/js/payment.js"></script>
+    <script src="assets/js/script.js"></script>
+</body>
+</html>

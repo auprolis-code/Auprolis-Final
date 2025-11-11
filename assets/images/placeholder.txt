@@ -1,0 +1,8 @@
+Placeholder images needed:
+- botswana-landscape.jpg (hero image)
+- toyota-hilux.jpg (featured asset)
+- tractor.jpg (featured asset)
+- commercial-building.jpg (featured asset)
+- house.jpg (featured asset)
+
+These images should be added to this directory to complete the landing page.

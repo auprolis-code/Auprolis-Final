@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Become a Seller - Auprolis</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/form.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html">
+                    <h2>Auprolis</h2>
+                </a>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="index.html#features" class="nav-link">Features</a>
+                <a href="index.html#pricing" class="nav-link">Pricing</a>
+                <a href="index.html#auctions" class="nav-link">Auctions</a>
+            </div>
+            <div class="nav-auth">
+                <a href="login.html" class="nav-link">Sign In</a>
+                <a href="signup.html" class="nav-link signup-btn">Sign Up</a>
+            </div>
+            <div class="hamburger" id="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Application Form Section -->
+    <section class="form-section">
+        <div class="form-container">
+            <div class="form-card">
+                <div class="form-header">
+                    <h1>Become a Seller on Auprolis</h1>
+                    <p>Complete the form below to apply to list assets on our platform. Our team will review your application.</p>
+                </div>
+
+                <form class="application-form" id="applicationForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fullName">Full Name</label>
+                            <input type="text" id="fullName" name="fullName" placeholder="e.g., Jane Doe" required>
+                            <div class="error-message" id="fullNameError"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="institutionName">Sheriff's Office / Institution Name</label>
+                            <input type="text" id="institutionName" name="institutionName" placeholder="e.g., Gaborone High Court" required>
+                            <div class="error-message" id="institutionNameError"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Official Email Address</label>
+                        <input type="email" id="email" name="email" placeholder="e.g., contact@justice.gov.bw" required>
+                        <div class="error-message" id="emailError"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">Message (Optional)</label>
+                        <textarea id="message" name="message" placeholder="Tell us a bit about the types of assets you plan to list." rows="4"></textarea>
+                        <div class="error-message" id="messageError"></div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="submit-btn" id="submitBtn">
+                            <span class="btn-text">Submit Application</span>
+                            <span class="btn-spinner" style="display: none;">
+                                <svg width="20" height="20" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10" stroke="#fff" stroke-width="2" fill="none" stroke-dasharray="31.416" stroke-dashoffset="31.416">
+                                        <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
+                                        <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
+                                    </circle>
+                                </svg>
+                            </span>
+                        </button>
+                    </div>
+
+                    <div class="form-footer">
+                        <p>By submitting this application, you agree to our <a href="#" class="link">Terms of Service</a> and <a href="#" class="link">Privacy Policy</a>.</p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Success/Error Messages -->
+    <div id="formMessages" class="form-messages"></div>
+
+    <!-- EmailJS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    
+    <script src="assets/js/email-config.js"></script>
+    <script src="assets/js/script.js"></script>
+    <script src="assets/js/application-form.js"></script>
+</body>
+</html>

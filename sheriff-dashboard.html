@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Dashboard - Auprolis</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/dashboard.css">
+    <link rel="stylesheet" href="assets/css/form.css">
+    <!-- Firebase SDK - COMMENTED OUT FOR DEMO MODE -->
+    <!-- <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script> -->
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html">
+                    <h2>Auprolis</h2>
+                </a>
+            </div>
+            <div class="nav-menu">
+                <a href="#listings" class="nav-link">My Listings</a>
+                <a href="#bids" class="nav-link">Bid Management</a>
+                <a href="#analytics" class="nav-link">Analytics</a>
+                <a href="#transactions" class="nav-link">Transactions</a>
+            </div>
+            <div class="nav-auth">
+                <span class="user-info" id="userInfo">Welcome!</span>
+                <button class="logout-btn" id="logoutBtn">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard Content -->
+    <section class="dashboard-section">
+        <div class="container">
+            <div class="dashboard-header">
+                <h1>Seller Dashboard</h1>
+                <p>Manage your asset listings, bids, and auction analytics</p>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-content">
+                        <h3>Active Listings</h3>
+                        <span class="stat-number" id="activeListingsCount">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-content">
+                        <h3>Total Bids</h3>
+                        <span class="stat-number" id="totalBidsCount">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🏆</div>
+                    <div class="stat-content">
+                        <h3>Completed Auctions</h3>
+                        <span class="stat-number" id="completedAuctionsCount">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-content">
+                        <h3>Total Revenue</h3>
+                        <span class="stat-number" id="totalRevenueCount">BWP 0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Tabs -->
+            <div class="dashboard-tabs">
+                <button class="tab-btn active" data-tab="overview">Overview</button>
+                <button class="tab-btn" data-tab="listings">My Listings</button>
+                <button class="tab-btn" data-tab="bids">Bid Management</button>
+                <button class="tab-btn" data-tab="analytics">Analytics</button>
+                <button class="tab-btn" data-tab="transactions">Transactions</button>
+            </div>
+
+            <!-- Overview Tab -->
+            <div class="tab-content active" id="overview">
+                <div class="dashboard-grid">
+                    <div class="dashboard-card">
+                        <h3>Create New Listing</h3>
+                        <p>Add a new asset to the auction platform</p>
+                        <button class="btn btn-primary" onclick="sellerHandler.openCreateListingModal()">Create Listing</button>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <h3>My Listings</h3>
+                        <p>Manage your active asset listings</p>
+                        <button class="btn btn-secondary" onclick="sellerHandler.switchTab('listings')">View Listings</button>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <h3>Bid Management</h3>
+                        <p>Review and manage incoming bids</p>
+                        <button class="btn btn-secondary" onclick="sellerHandler.switchTab('bids')">Manage Bids</button>
+                    </div>
+
+                    <div class="dashboard-card">
+                        <h3>Analytics</h3>
+                        <p>View performance metrics and reports</p>
+                        <button class="btn btn-secondary" onclick="sellerHandler.switchTab('analytics')">View Analytics</button>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="recent-activity">
+                    <h3>Recent Activity</h3>
+                    <div class="activity-feed" id="activityFeed">
+                        <!-- Activity items will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <h3>Quick Actions</h3>
+                    <div class="actions-grid">
+                        <button class="action-btn" id="createListingBtn">
+                            <span class="action-icon">➕</span>
+                            <span>Create Listing</span>
+                        </button>
+                        <button class="action-btn" id="viewBidsBtn">
+                            <span class="action-icon">💰</span>
+                            <span>View Bids</span>
+                        </button>
+                        <button class="action-btn" id="generateReportBtn">
+                            <span class="action-icon">📊</span>
+                            <span>Generate Report</span>
+                        </button>
+                        <button class="action-btn" id="manageAuctionsBtn">
+                            <span class="action-icon">⏰</span>
+                            <span>Manage Auctions</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- My Listings Tab -->
+            <div class="tab-content" id="listings">
+                <div class="listings-section">
+                    <div class="section-header">
+                        <h2>My Listings</h2>
+                        <div class="listings-actions">
+                            <button class="btn btn-primary" onclick="sellerHandler.openCreateListingModal()">Create New Listing</button>
+                            <select id="listingStatusFilter" class="filter-select">
+                                <option value="">All Listings</option>
+                                <option value="active">Active</option>
+                                <option value="pending">Pending</option>
+                                <option value="ended">Ended</option>
+                                <option value="sold">Sold</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="listings-grid" id="listingsGrid">
+                        <!-- Listings will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bid Management Tab -->
+            <div class="tab-content" id="bids">
+                <div class="bids-section">
+                    <div class="section-header">
+                        <h2>Bid Management</h2>
+                        <div class="bids-filters">
+                            <select id="bidStatusFilter" class="filter-select">
+                                <option value="">All Bids</option>
+                                <option value="pending">Pending</option>
+                                <option value="accepted">Accepted</option>
+                                <option value="rejected">Rejected</option>
+                                <option value="winning">Winning</option>
+                            </select>
+                            <select id="bidSortFilter" class="filter-select">
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                                <option value="amount-high">Highest Amount</option>
+                                <option value="amount-low">Lowest Amount</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="bids-list" id="bidsList">
+                        <!-- Bids will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div class="tab-content" id="analytics">
+                <div class="analytics-section">
+                    <div class="section-header">
+                        <h2>Performance Analytics</h2>
+                        <div class="analytics-filters">
+                            <select id="analyticsPeriod" class="filter-select">
+                                <option value="7days">Last 7 Days</option>
+                                <option value="30days">Last 30 Days</option>
+                                <option value="90days">Last 90 Days</option>
+                                <option value="1year">Last Year</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="analytics-grid">
+                        <div class="analytics-card">
+                            <h4>Listing Performance</h4>
+                            <div class="analytics-chart" id="listingPerformanceChart">
+                                <!-- Chart will be populated by JavaScript -->
+                            </div>
+                        </div>
+
+                        <div class="analytics-card">
+                            <h4>Revenue Trends</h4>
+                            <div class="analytics-chart" id="revenueChart">
+                                <!-- Chart will be populated by JavaScript -->
+                            </div>
+                        </div>
+
+                        <div class="analytics-card">
+                            <h4>Bid Activity</h4>
+                            <div class="analytics-chart" id="bidActivityChart">
+                                <!-- Chart will be populated by JavaScript -->
+                            </div>
+                        </div>
+
+                        <div class="analytics-card">
+                            <h4>Success Rate</h4>
+                            <div class="analytics-metrics">
+                                <div class="metric-item">
+                                    <span class="metric-label">Auction Success Rate</span>
+                                    <span class="metric-value" id="successRate">0%</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Average Sale Price</span>
+                                    <span class="metric-value" id="avgSalePrice">BWP 0</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Total Bids Received</span>
+                                    <span class="metric-value" id="totalBidsReceived">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions Tab -->
+            <div class="tab-content" id="transactions">
+                <div class="transactions-section">
+                    <div class="section-header">
+                        <h2>Transaction History</h2>
+                        <div class="transaction-filters">
+                            <select id="transactionStatusFilter" class="filter-select">
+                                <option value="">All Transactions</option>
+                                <option value="completed">Completed</option>
+                                <option value="pending">Pending</option>
+                                <option value="failed">Failed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="transactions-list" id="transactionsList">
+                        <!-- Transactions will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Status -->
+            <div class="subscription-status">
+                <h3>Account Status</h3>
+                <div class="status-info" id="subscriptionStatus">
+                    <span class="status-badge active">Verified Seller</span>
+                    <p>Your seller account is verified and active. You can list assets and manage auctions.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Create Listing Modal -->
+    <div class="modal" id="createListingModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>Create New Asset Listing</h3>
+                <button class="modal-close" id="createListingModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="createListingForm" class="listing-form">
+                    <div class="form-section">
+                        <h4>Basic Information</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="listingTitle">Asset Title *</label>
+                                <input type="text" id="listingTitle" name="title" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="listingCategory">Category *</label>
+                                <select id="listingCategory" name="category" required>
+                                    <option value="">Select Category</option>
+                                    <option value="vehicles">Vehicles</option>
+                                    <option value="property">Property</option>
+                                    <option value="equipment">Equipment</option>
+                                    <option value="furniture">Furniture</option>
+                                    <option value="electronics">Electronics</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="listingLocation">Location *</label>
+                                <input type="text" id="listingLocation" name="location" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="listingCondition">Condition *</label>
+                                <select id="listingCondition" name="condition" required>
+                                    <option value="">Select Condition</option>
+                                    <option value="excellent">Excellent</option>
+                                    <option value="good">Good</option>
+                                    <option value="fair">Fair</option>
+                                    <option value="poor">Poor</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="listingDescription">Description *</label>
+                            <textarea id="listingDescription" name="description" rows="4" required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Auction Details</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="startingBid">Starting Bid (BWP) *</label>
+                                <input type="number" id="startingBid" name="startingBid" required min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="reservePrice">Reserve Price (BWP)</label>
+                                <input type="number" id="reservePrice" name="reservePrice" min="0">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="auctionStartDate">Auction Start Date *</label>
+                                <input type="datetime-local" id="auctionStartDate" name="startDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="auctionEndDate">Auction End Date *</label>
+                                <input type="datetime-local" id="auctionEndDate" name="endDate" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Asset Specifications</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="assetYear">Year</label>
+                                <input type="number" id="assetYear" name="year" min="1900" max="2024">
+                            </div>
+                            <div class="form-group">
+                                <label for="assetSize">Size/Area</label>
+                                <input type="text" id="assetSize" name="size" placeholder="e.g., 250 sqm, 4 bedrooms">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="assetMileage">Mileage/Hours</label>
+                                <input type="text" id="assetMileage" name="mileage" placeholder="e.g., 85000 km, 2500 hours">
+                            </div>
+                            <div class="form-group">
+                                <label for="assetFuelType">Fuel Type</label>
+                                <select id="assetFuelType" name="fuelType">
+                                    <option value="">Select Fuel Type</option>
+                                    <option value="petrol">Petrol</option>
+                                    <option value="diesel">Diesel</option>
+                                    <option value="electric">Electric</option>
+                                    <option value="hybrid">Hybrid</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Images</h4>
+                        <div class="image-upload-area" id="imageUploadArea">
+                            <div class="upload-placeholder">
+                                <span class="upload-icon">📷</span>
+                                <p>Click to upload images or drag and drop</p>
+                                <input type="file" id="imageUpload" name="images" multiple accept="image/*" style="display: none;">
+                            </div>
+                        </div>
+                        <div class="uploaded-images" id="uploadedImages">
+                            <!-- Uploaded images will be displayed here -->
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h4>Contact Information</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="contactName">Contact Person *</label>
+                                <input type="text" id="contactName" name="contactName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="contactPhone">Phone Number *</label>
+                                <input type="tel" id="contactPhone" name="contactPhone" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="contactEmail">Email Address *</label>
+                            <input type="email" id="contactEmail" name="contactEmail" required>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="sellerHandler.closeCreateListingModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Listing</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asset Details Modal -->
+    <div class="modal" id="assetDetailsModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3 id="assetDetailsTitle">Asset Details</h3>
+                <button class="modal-close" id="assetDetailsModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="asset-details-content" id="assetDetailsContent">
+                    <!-- Asset details will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bid Management Modal -->
+    <div class="modal" id="bidManagementModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>Bid Management</h3>
+                <button class="modal-close" id="bidManagementModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="bid-management-content" id="bidManagementContent">
+                    <!-- Bid management content will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demo mode support -->
+    <script src="assets/js/demo-data.js"></script>
+    <script src="assets/js/demo-mode.js"></script>
+    <script src="assets/js/firebase-config.js"></script>
+    <script src="assets/js/seller-dashboard.js"></script>
+    <script src="assets/js/script.js"></script>
+</body>
+</html>
+

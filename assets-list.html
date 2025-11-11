@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Assets - Auprolis</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/assets-list.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html">
+                    <h2>Auprolis</h2>
+                </a>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="index.html#features" class="nav-link">Features</a>
+                <a href="index.html#pricing" class="nav-link">Pricing</a>
+                <a href="assets-list.html" class="nav-link active">Auctions</a>
+            </div>
+            <div class="nav-auth">
+                <a href="login.html" class="nav-link">Sign In</a>
+                <a href="signup.html" class="nav-link signup-btn">Sign Up</a>
+            </div>
+            <div class="hamburger" id="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Assets List Section -->
+    <section class="assets-section">
+        <div class="container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1>Browse Available Assets</h1>
+                <p>Discover high-quality assets available for auction across Botswana</p>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="search-filters-section">
+                <!-- Search Bar -->
+                <div class="search-container">
+                    <div class="search-input-group">
+                        <input type="text" id="searchInput" placeholder="Search assets by title, location, or description..." class="search-input">
+                        <button class="search-btn" id="searchBtn">
+                            <span class="search-icon">🔍</span>
+                        </button>
+                    </div>
+                    <div class="search-suggestions" id="searchSuggestions">
+                        <!-- Search suggestions will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Advanced Filters -->
+                <div class="filters-container">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="categoryFilter">Category</label>
+                            <select id="categoryFilter" class="filter-select">
+                                <option value="">All Categories</option>
+                                <option value="vehicles">Vehicles</option>
+                                <option value="property">Property</option>
+                                <option value="equipment">Equipment</option>
+                                <option value="furniture">Furniture</option>
+                                <option value="electronics">Electronics</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="locationFilter">Location</label>
+                            <select id="locationFilter" class="filter-select">
+                                <option value="">All Locations</option>
+                                <option value="gaborone">Gaborone</option>
+                                <option value="francistown">Francistown</option>
+                                <option value="maun">Maun</option>
+                                <option value="kasane">Kasane</option>
+                                <option value="selebi-phikwe">Selebi-Phikwe</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="conditionFilter">Condition</label>
+                            <select id="conditionFilter" class="filter-select">
+                                <option value="">All Conditions</option>
+                                <option value="excellent">Excellent</option>
+                                <option value="good">Good</option>
+                                <option value="fair">Fair</option>
+                                <option value="poor">Poor</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="priceRangeFilter">Price Range</label>
+                            <select id="priceRangeFilter" class="filter-select">
+                                <option value="">Any Price</option>
+                                <option value="0-50000">Under BWP 50,000</option>
+                                <option value="50000-100000">BWP 50,000 - 100,000</option>
+                                <option value="100000-250000">BWP 100,000 - 250,000</option>
+                                <option value="250000-500000">BWP 250,000 - 500,000</option>
+                                <option value="500000+">Over BWP 500,000</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="endingFilter">Auction Ending</label>
+                            <select id="endingFilter" class="filter-select">
+                                <option value="">Any Time</option>
+                                <option value="today">Today</option>
+                                <option value="tomorrow">Tomorrow</option>
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="sortFilter">Sort By</label>
+                            <select id="sortFilter" class="filter-select">
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
+                                <option value="price-low">Price: Low to High</option>
+                                <option value="price-high">Price: High to Low</option>
+                                <option value="ending-soon">Ending Soon</option>
+                                <option value="most-bids">Most Bids</option>
+                                <option value="least-bids">Least Bids</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="filter-actions">
+                        <button class="btn btn-secondary" id="clearFiltersBtn">Clear All Filters</button>
+                        <button class="btn btn-primary" id="applyFiltersBtn">Apply Filters</button>
+                    </div>
+                </div>
+
+                <!-- Active Filters Display -->
+                <div class="active-filters" id="activeFilters">
+                    <!-- Active filters will be displayed here -->
+                </div>
+            </div>
+
+            <!-- Assets Grid -->
+            <div class="assets-grid" id="assetsGrid">
+                <!-- Assets will be populated by JavaScript -->
+            </div>
+
+            <!-- Load More Button -->
+            <div class="load-more-section">
+                <button class="load-more-btn" id="loadMoreBtn">Load More Assets</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Login Prompt Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Sign In Required</h3>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>To view full asset details, bidding options, and contact information, please sign in to your account.</p>
+                <div class="modal-actions">
+                    <a href="login.html" class="btn btn-primary">Sign In</a>
+                    <a href="signup.html" class="btn btn-secondary">Sign Up</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Asset Details Modal -->
+    <div class="modal" id="assetModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3 id="assetModalTitle">Asset Details</h3>
+                <button class="modal-close" id="assetModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="asset-details-content" id="assetDetailsContent">
+                    <!-- Asset details will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reservation Modal -->
+    <div class="modal" id="reservationModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3 id="reservationModalTitle">Book Item</h3>
+                <button class="modal-close" id="reservationModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="reservation-content" id="reservationContent">
+                    <!-- Reservation interface will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reservation History Modal -->
+    <div class="modal" id="reservationHistoryModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3>My Reservations</h3>
+                <button class="modal-close" id="reservationHistoryModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="reservation-history-content" id="reservationHistoryContent">
+                    <!-- Reservation history will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reservation Confirmation Modal -->
+    <div class="modal" id="reservationConfirmationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Your Reservation</h3>
+                <button class="modal-close" id="reservationConfirmationModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="reservation-confirmation-content" id="reservationConfirmationContent">
+                    <!-- Reservation confirmation will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demo mode support -->
+    <script src="assets/js/demo-data.js"></script>
+    <script src="assets/js/demo-mode.js"></script>
+    <script src="assets/js/firebase-config.js"></script>
+    <script src="assets/js/assets-data.js"></script>
+    <script src="assets/js/reservation.js"></script>
+    <script src="assets/js/assets-list.js"></script>
+    <script src="assets/js/script.js"></script>
+</body>
+</html>
+
