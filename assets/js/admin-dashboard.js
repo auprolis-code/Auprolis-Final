@@ -150,23 +150,106 @@ class AdminDashboardHandler {
 
     async loadUserData() {
         try {
-            if (this.db && this.db.collection) {
-                const userDoc = await this.db.collection('users').doc(this.user.uid).get();
+            // First, check if user data is already in the user object (from localStorage or Firebase)
+            if (this.user && (this.user.userType || this.user.email)) {
+                // Use user data directly if available (demo mode or Firebase user with data)
+                this.userData = this.user;
+                console.log('Using user data from auth object:', this.user.email);
                 
-                if (userDoc.exists) {
-                    this.userData = userDoc.data();
-                    if (this.userData.userType !== 'admin') {
+                // Check admin role if userType is available
+                if (this.userData.userType && this.userData.userType !== 'admin') {
+                    alert('Only admins can access this dashboard.');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                this.updateUI();
+                return;
+            }
+
+            // Try to get user data from Firestore if available
+            if (this.db && this.db.collection && this.user && this.user.uid) {
+                try {
+                    const userDoc = await this.db.collection('users').doc(this.user.uid).get();
+                    
+                    if (userDoc.exists) {
+                        this.userData = userDoc.data();
+                        console.log('Loaded user data from Firestore:', this.userData.email);
+                        
+                        if (this.userData.userType !== 'admin') {
+                            alert('Only admins can access this dashboard.');
+                            window.location.href = 'login.html';
+                            return;
+                        }
+                        
+                        this.updateUI();
+                        return;
+                    }
+                } catch (firestoreError) {
+                    console.warn('Firestore error (may be in demo mode):', firestoreError);
+                }
+            }
+
+            // Check localStorage for demo user data
+            const storedUser = localStorage.getItem('demo_user');
+            if (storedUser) {
+                try {
+                    const parsedUser = JSON.parse(storedUser);
+                    if (parsedUser && (parsedUser.email || parsedUser.uid)) {
+                        this.userData = parsedUser;
+                        this.user = parsedUser; // Update user object
+                        console.log('Using user data from localStorage:', parsedUser.email);
+                        
+                        // Check admin role if userType is available
+                        if (this.userData.userType && this.userData.userType !== 'admin') {
+                            alert('Only admins can access this dashboard.');
+                            window.location.href = 'login.html';
+                            return;
+                        }
+                        
+                        this.updateUI();
+                        return;
+                    }
+                } catch (parseError) {
+                    console.warn('Error parsing stored user:', parseError);
+                }
+            }
+
+            // If we still don't have user data but have a user object, use it
+            if (this.user && (this.user.email || this.user.uid)) {
+                this.userData = this.user;
+                console.log('Using Firebase auth user object:', this.user.email);
+                this.updateUI();
+                return;
+            }
+
+            // Only redirect if we truly have no user data
+            console.log('No user data available - redirecting to login');
+            window.location.href = 'login.html';
+        } catch (error) {
+            console.error('Error loading user data:', error);
+            // Check localStorage as fallback before redirecting
+            const storedUser = localStorage.getItem('demo_user');
+            if (storedUser) {
+                try {
+                    this.userData = JSON.parse(storedUser);
+                    this.user = this.userData;
+                    
+                    // Check admin role if userType is available
+                    if (this.userData.userType && this.userData.userType !== 'admin') {
                         alert('Only admins can access this dashboard.');
                         window.location.href = 'login.html';
                         return;
                     }
+                    
+                    this.updateUI();
+                    return;
+                } catch (parseError) {
+                    console.error('Error parsing stored user:', parseError);
                 }
             }
-            this.updateUI();
-        } catch (error) {
-            console.error('Error loading user data:', error);
-            // In demo mode, continue anyway
-            this.updateUI();
+            // Only redirect if all options fail
+            window.location.href = 'login.html';
         }
     }
 

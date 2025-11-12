@@ -18,6 +18,23 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userType == 'admin';
     }
     
+    // Helper function to check if user is sheriff
+    function isSheriff() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userType == 'sheriff';
+    }
+    
+    // Helper function to check if user is buyer
+    function isBuyer() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userType == 'buyer';
+    }
+    
+    // Helper function to get user type
+    function getUserType() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userType;
+    }
+    
     // Users collection
     match /users/{userId} {
       // Allow read if user is authenticated and viewing their own data, or if admin
@@ -40,12 +57,12 @@ service cloud.firestore {
       // Anyone authenticated can read assets
       allow read: if isAuthenticated();
       
-      // Only sellers, sheriffs, and admins can create assets
+      // Only sheriffs and admins can create assets (buyers cannot create assets)
       allow create: if isAuthenticated() && (
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userType in ['seller', 'sheriff', 'admin']
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userType in ['sheriff', 'admin']
       );
       
-      // Only asset owner or admin can update
+      // Only asset owner (sheriff/admin) or admin can update
       allow update: if isAuthenticated() && (
         resource.data.createdBy == request.auth.uid || isAdmin()
       );

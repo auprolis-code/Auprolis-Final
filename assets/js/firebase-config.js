@@ -7,7 +7,9 @@ const firebaseConfig = {
     storageBucket: "auprolis-mvp2.firebasestorage.app",
     messagingSenderId: "954767989673",
     appId: "1:954767989673:web:c22f4ebb2227c9cf0d42b8",
-    measurementId: "G-VQY6T0Q7Y0"
+    measurementId: "G-VQY6T0Q7Y0",
+    // Realtime Database URL - Update this with your actual Realtime Database URL
+    databaseURL: "https://auprolis-mvp2-default-rtdb.firebaseio.com"
 };
 
 // Initialize Firebase - with fallback to demo mode
@@ -18,8 +20,11 @@ try {
         // Initialize Firebase Auth
         const auth = firebase.auth();
         
-        // Initialize Firestore
+        // Initialize Firestore (NoSQL Document Database)
         const db = firebase.firestore();
+        
+        // Initialize Realtime Database (JSON Database)
+        const realtimeDb = firebase.database();
         
         // Google Auth Provider
         const googleProvider = new firebase.auth.GoogleAuthProvider();
@@ -31,11 +36,13 @@ try {
         
         // Export for use in other files
         window.auth = auth;
-        window.db = db;
+        window.db = db; // Firestore
+        window.realtimeDb = realtimeDb; // Realtime Database
         window.googleProvider = googleProvider;
         
         console.log('Firebase initialized successfully');
         console.log('Firestore database initialized');
+        console.log('Realtime Database initialized');
     }
 } catch (error) {
     console.error('Firebase initialization failed:', error);

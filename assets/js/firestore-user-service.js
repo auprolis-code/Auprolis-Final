@@ -174,6 +174,85 @@ class FirestoreUserService {
             throw error;
         }
     }
+
+    /**
+     * Get user type for authenticated user
+     * Automatically detects user type on login
+     * @param {string} uid - User ID
+     * @returns {Promise<string|null>} - Returns 'admin', 'buyer', 'sheriff', or null
+     */
+    async getUserType(uid) {
+        if (!this.db) {
+            throw new Error('Firestore not initialized');
+        }
+
+        try {
+            const userDoc = await this.db.collection('users').doc(uid).get();
+            
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                const userType = userData.userType;
+                
+                // Validate user type (must be one of: admin, buyer, sheriff)
+                const validTypes = ['admin', 'buyer', 'sheriff'];
+                if (validTypes.includes(userType)) {
+                    return userType;
+                } else {
+                    console.warn(`Invalid user type: ${userType}. Defaulting to 'buyer'`);
+                    return 'buyer';
+                }
+            }
+            return null;
+        } catch (error) {
+            console.error('Error getting user type from Firestore:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Check if user is admin
+     * @param {string} uid - User ID
+     * @returns {Promise<boolean>}
+     */
+    async isAdmin(uid) {
+        const userType = await this.getUserType(uid);
+        return userType === 'admin';
+    }
+
+    /**
+     * Check if user is buyer
+     * @param {string} uid - User ID
+     * @returns {Promise<boolean>}
+     */
+    async isBuyer(uid) {
+        const userType = await this.getUserType(uid);
+        return userType === 'buyer';
+    }
+
+    /**
+     * Check if user is sheriff
+     * @param {string} uid - User ID
+     * @returns {Promise<boolean>}
+     */
+    async isSheriff(uid) {
+        const userType = await this.getUserType(uid);
+        return userType === 'sheriff';
+    }
+
+    /**
+     * Validate and set user type (admin only)
+     * @param {string} uid - User ID
+     * @param {string} userType - Must be 'admin', 'buyer', or 'sheriff'
+     * @returns {Promise<void>}
+     */
+    async setUserType(uid, userType) {
+        const validTypes = ['admin', 'buyer', 'sheriff'];
+        if (!validTypes.includes(userType)) {
+            throw new Error(`Invalid user type. Must be one of: ${validTypes.join(', ')}`);
+        }
+
+        await this.updateUser(uid, { userType });
+    }
 }
 
 // Create and export singleton instance

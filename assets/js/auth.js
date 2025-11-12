@@ -1,14 +1,14 @@
 // Authentication Functions
 class AuthManager {
     constructor() {
-        // DEMO MODE: Use demo authentication
-        if (typeof demoAuth !== 'undefined') {
-            this.auth = demoAuth;
-            console.log('Using demoAuth for authentication');
-        } else if (typeof firebase !== 'undefined' && firebase.auth) {
+        // FIREBASE FIRST: Prioritize Firebase authentication over demo mode
+        if (typeof firebase !== 'undefined' && firebase.auth) {
             this.auth = firebase.auth();
             this.googleProvider = new firebase.auth.GoogleAuthProvider();
             console.log('Using Firebase auth');
+        } else if (typeof demoAuth !== 'undefined') {
+            this.auth = demoAuth;
+            console.log('Firebase not available, using demoAuth for authentication');
         } else {
             console.error('No authentication method available!');
             this.auth = null;
@@ -42,27 +42,6 @@ class AuthManager {
         const googleBtn = document.getElementById('googleSignIn');
         if (googleBtn) {
             googleBtn.addEventListener('click', (e) => this.handleGoogleLogin(e));
-        }
-
-        // Role selection dropdown
-        const userRole = document.getElementById('userRole');
-        if (userRole) {
-            userRole.addEventListener('change', () => this.handleRoleSelection());
-        }
-
-        // Continue button
-        const continueBtn = document.getElementById('continueToDashboard');
-        if (continueBtn) {
-            continueBtn.addEventListener('click', () => this.continueToDashboard());
-        }
-
-        // Modal overlay click to close
-        const roleModalOverlay = document.querySelector('.role-selection-overlay');
-        if (roleModalOverlay) {
-            roleModalOverlay.addEventListener('click', () => {
-                // Don't close on overlay click - require role selection
-                // this.hideRoleSelectionModal();
-            });
         }
 
         // Real-time form validation
@@ -198,10 +177,6 @@ class AuthManager {
                 console.log('Using user object as userData fallback');
             }
             
-            // Store user data for role selection
-            this.currentLoginUser = user;
-            this.currentLoginUserData = userData || user;
-            
             // Ensure user is stored in localStorage for dashboard access
             const finalUserData = userData || user;
             if (finalUserData) {
@@ -213,8 +188,17 @@ class AuthManager {
                 }
             }
             
-            // Show role selection modal - user will choose their role
-            this.showRoleSelectionModal();
+            // Get userType from userData or default to 'buyer'
+            const userType = (userData && userData.userType) || (user && user.userType) || 'buyer';
+            console.log('✓ Login successful! Redirecting to dashboard for userType:', userType);
+            
+            // Show success message and redirect directly
+            this.showMessage('Login successful! Redirecting...', 'success');
+            
+            // Small delay to show success message, then redirect
+            setTimeout(() => {
+                this.redirectToDashboard(finalUserData, userType);
+            }, 500);
             
         } catch (error) {
             console.error('Login error:', error);
@@ -245,11 +229,13 @@ class AuthManager {
                 this.auth.currentUser = demoUser;
                 localStorage.setItem('demo_user', JSON.stringify(demoUser));
                 
-                this.currentLoginUser = demoUser;
-                this.currentLoginUserData = demoUser;
-                
+                const userType = demoUser.userType || 'buyer';
                 this.setLoadingState(googleBtn, false);
-                this.showRoleSelectionModal();
+                this.showMessage('Login successful! Redirecting...', 'success');
+                
+                setTimeout(() => {
+                    this.redirectToDashboard(demoUser, userType);
+                }, 500);
                 return;
             }
             
@@ -259,13 +245,28 @@ class AuthManager {
             // Check if user exists in our system
             const userData = await this.getUserData(user.uid || user.email);
             
-            // Store user data for role selection
-            this.currentLoginUser = user;
-            this.currentLoginUserData = userData;
+            // Ensure user is stored in localStorage for dashboard access
+            const finalUserData = userData || user;
+            if (finalUserData) {
+                try {
+                    localStorage.setItem('demo_user', JSON.stringify(finalUserData));
+                    console.log('✓ User stored in localStorage for dashboard access');
+                } catch (storageError) {
+                    console.warn('Could not store user in localStorage:', storageError);
+                }
+            }
             
-            // Show role selection modal
+            // Get userType from userData or default to 'buyer'
+            const userType = (userData && userData.userType) || (user && user.userType) || 'buyer';
+            console.log('✓ Google login successful! Redirecting to dashboard for userType:', userType);
+            
             this.setLoadingState(googleBtn, false);
-            this.showRoleSelectionModal();
+            this.showMessage('Login successful! Redirecting...', 'success');
+            
+            // Small delay to show success message, then redirect
+            setTimeout(() => {
+                this.redirectToDashboard(finalUserData, userType);
+            }, 500);
             
         } catch (error) {
             console.error('Google login error:', error);
@@ -276,8 +277,24 @@ class AuthManager {
 
     async getUserData(uidOrEmail) {
         try {
-            // DEMO MODE: Check demo users first
-            if (typeof DEMO_USERS !== 'undefined') {
+            // FIREBASE FIRST: Fetch user data from Firestore if Firebase is available
+            if (typeof firebase !== 'undefined' && firebase.firestore && uidOrEmail) {
+                try {
+                    const db = firebase.firestore();
+                    // Try as UID first
+                    const userDoc = await db.collection('users').doc(uidOrEmail).get();
+                    
+                    if (userDoc.exists) {
+                        console.log('Found user in Firestore:', uidOrEmail);
+                        return userDoc.data();
+                    }
+                } catch (firestoreError) {
+                    console.warn('Firestore error:', firestoreError);
+                }
+            }
+            
+            // DEMO MODE FALLBACK: Check demo users only if Firebase is not available
+            if (typeof DEMO_USERS !== 'undefined' && (typeof firebase === 'undefined' || !firebase.firestore)) {
                 // Try to find by uid first, then by email (case-insensitive)
                 let demoUser = null;
                 
@@ -298,28 +315,13 @@ class AuthManager {
                 }
             }
             
-            // Fetch user data from Firestore
-            if (typeof firebase !== 'undefined' && firebase.firestore && uidOrEmail) {
-                try {
-                    const db = firebase.firestore();
-                    // Try as UID first
-                    const userDoc = await db.collection('users').doc(uidOrEmail).get();
-                    
-                    if (userDoc.exists) {
-                        return userDoc.data();
-                    }
-                } catch (firestoreError) {
-                    console.warn('Firestore error (expected in demo mode):', firestoreError);
-                }
-            }
-            
             // User not found in database
             console.log('User data not found for:', uidOrEmail);
             return null;
         } catch (error) {
             console.error('Error fetching user data:', error);
             
-            // DEMO MODE: Fallback to demo users
+            // DEMO MODE: Fallback to demo users only if Firebase failed
             if (typeof DEMO_USERS !== 'undefined') {
                 let demoUser = null;
                 if (uidOrEmail) {
@@ -452,122 +454,24 @@ class AuthManager {
         }, 5000);
     }
 
-    showRoleSelectionModal() {
-        const modal = document.getElementById('roleSelectionModal');
-        if (modal) {
-            modal.style.display = 'flex';
-            modal.classList.add('show');
-            // Reset role selection
-            const userRole = document.getElementById('userRole');
-            const continueBtn = document.getElementById('continueToDashboard');
-            if (userRole) {
-                userRole.value = '';
-            }
-            if (continueBtn) {
-                continueBtn.disabled = true;
-            }
-            
-            // Trigger opacity transition
-            setTimeout(() => {
-                modal.style.opacity = '1';
-            }, 10);
-        }
-        this.showMessage('Login successful! Please select your role.', 'success');
-    }
-
-    hideRoleSelectionModal() {
-        const modal = document.getElementById('roleSelectionModal');
-        if (modal) {
-            modal.style.opacity = '0';
-            modal.classList.remove('show');
-            setTimeout(() => {
-                modal.style.display = 'none';
-            }, 300);
-        }
-    }
-
-    handleRoleSelection() {
-        const userRole = document.getElementById('userRole');
-        const continueBtn = document.getElementById('continueToDashboard');
-        
-        if (userRole && continueBtn) {
-            if (userRole.value) {
-                continueBtn.disabled = false;
-            } else {
-                continueBtn.disabled = true;
-            }
-        }
-    }
-
-    continueToDashboard() {
-        const userRole = document.getElementById('userRole');
-        if (!userRole || !userRole.value) {
-            this.showMessage('Please select a role first.', 'error');
-            return;
-        }
-
-        const selectedRole = userRole.value;
-        const user = this.currentLoginUser;
-        
-        if (!user) {
-            console.error('No user data available for redirect');
-            this.showMessage('Login session expired. Please login again.', 'error');
-            return;
-        }
-        
-        // Map selected role to userType
-        let userType = selectedRole;
-        if (selectedRole === 'seller') {
-            userType = 'sheriff';
-        }
-        
-        console.log('Continuing to dashboard with role:', selectedRole, 'userType:', userType);
-        
-        // Determine redirect URL upfront
-        let redirectUrl = 'buyer-dashboard.html'; // default
-        if (userType === 'admin') {
-            redirectUrl = 'admin-dashboard.html';
-        } else if (userType === 'sheriff' || userType === 'seller') {
-            redirectUrl = 'sheriff-dashboard.html';
-        } else if (userType === 'buyer') {
-            redirectUrl = 'buyer-dashboard.html';
-        }
-        console.log('✓ Will redirect to:', redirectUrl);
-
-        // Ensure user is in localStorage before redirecting
-        if (user) {
-            try {
-                localStorage.setItem('demo_user', JSON.stringify(user));
-                console.log('✓ User data saved to localStorage before redirect');
-            } catch (storageError) {
-                console.warn('Could not save user to localStorage:', storageError);
-            }
-        }
-
-        this.hideRoleSelectionModal();
-        this.showMessage('Redirecting to dashboard...', 'success');
-        
-        // Small delay to let modal close animation complete, then redirect
-        setTimeout(() => {
-            console.log('Executing redirect to:', redirectUrl);
-            this.redirectToDashboard(user, userType);
-        }, 300);
-    }
 }
 
 // Initialize Auth Manager when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     // Function to initialize auth manager
     function initAuthManager() {
-        // Check if required dependencies are loaded
-        if (typeof DEMO_USERS === 'undefined' && typeof firebase === 'undefined') {
-            console.warn('Waiting for dependencies to load...');
-            setTimeout(initAuthManager, 100);
-            return;
+        // Check if Firebase is available (prioritize Firebase)
+        if (typeof firebase === 'undefined' || !firebase.auth) {
+            // If Firebase is not available, check for demo mode
+            if (typeof DEMO_USERS === 'undefined' && typeof demoAuth === 'undefined') {
+                console.warn('Waiting for dependencies to load...');
+                setTimeout(initAuthManager, 100);
+                return;
+            }
         }
         
-        // Check if demoAuth is available (for demo mode)
-        if (typeof demoAuth === 'undefined' && (typeof firebase === 'undefined' || !firebase.auth)) {
+        // Check if at least one authentication method is available
+        if ((typeof firebase === 'undefined' || !firebase.auth) && typeof demoAuth === 'undefined') {
             console.warn('No authentication method available. Retrying...');
             setTimeout(initAuthManager, 100);
             return;
@@ -576,7 +480,8 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             window.authManager = new AuthManager();
             console.log('✓ AuthManager initialized successfully');
-            console.log('✓ Auth method:', typeof demoAuth !== 'undefined' ? 'Demo Mode' : 'Firebase');
+            const authMethod = (typeof firebase !== 'undefined' && firebase.auth) ? 'Firebase' : 'Demo Mode';
+            console.log('✓ Auth method:', authMethod);
         } catch (error) {
             console.error('✗ Error initializing AuthManager:', error);
             // Try again after a short delay
@@ -591,14 +496,15 @@ document.addEventListener('DOMContentLoaded', function() {
 // Utility function to check if user is logged in
 function checkAuthState() {
     return new Promise((resolve) => {
-        const auth = typeof demoAuth !== 'undefined' ? demoAuth : 
-                     (typeof firebase !== 'undefined' && firebase.auth ? firebase.auth() : null);
+        // FIREBASE FIRST: Prioritize Firebase auth
+        const auth = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth() :
+                     (typeof demoAuth !== 'undefined' ? demoAuth : null);
         if (auth && auth.onAuthStateChanged) {
             auth.onAuthStateChanged((user) => {
                 resolve(user);
             });
         } else {
-            // Check localStorage for demo user
+            // Check localStorage for demo user (fallback)
             const storedUser = localStorage.getItem('demo_user');
             resolve(storedUser ? JSON.parse(storedUser) : null);
         }

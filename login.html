@@ -6,18 +6,14 @@
     <title>Sign In - Auprolis</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/auth.css">
-    <!-- Firebase SDK - COMMENTED OUT FOR DEMO MODE -->
-    <!-- <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script> -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     
-    <!-- Demo Mode Notice -->
+    <!-- Firebase Authentication Enabled -->
     <script>
-        console.log('DEMO MODE: Firebase authentication is disabled. Using demo authentication.');
-        console.log('Demo login credentials:');
-        console.log('- buyer@demo.com (any password)');
-        console.log('- seller@demo.com (any password)');
-        console.log('- admin@demo.com (any password)');
+        console.log('Firebase authentication is enabled.');
     </script>
 </head>
 <body>
@@ -116,39 +112,6 @@
 
     <!-- Error/Success Messages -->
     <div id="authMessages" class="auth-messages"></div>
-
-    <!-- Role Selection Modal -->
-    <div id="roleSelectionModal" class="role-selection-modal" style="display: none;">
-        <div class="role-selection-overlay"></div>
-        <div class="role-selection-card">
-            <div class="role-selection-header">
-                <h2>Select Your Role</h2>
-                <p>Choose how you want to access Auprolis</p>
-            </div>
-            <div class="role-selection-content">
-                <div class="role-dropdown-container">
-                    <label for="userRole" class="role-label">I want to login as:</label>
-                    <select id="userRole" class="role-dropdown">
-                        <option value="">-- Select Role --</option>
-                        <option value="buyer">Buyer</option>
-                        <option value="seller">Seller</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-                <button id="continueToDashboard" class="btn-continue" disabled>
-                    <span class="btn-text">Continue</span>
-                    <span class="btn-spinner" style="display: none;">
-                        <svg width="20" height="20" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="10" stroke="#fff" stroke-width="2" fill="none" stroke-dasharray="31.416" stroke-dashoffset="31.416">
-                                <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
-                                <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
-                            </circle>
-                        </svg>
-                    </span>
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- Demo mode support - Load in correct order -->
     <script src="assets/js/demo-data.js"></script>

@@ -169,19 +169,74 @@ class SellerDashboardHandler {
 
     async loadUserData() {
         try {
-            const userDoc = await this.db.collection('users').doc(this.user.uid).get();
-            
-            if (userDoc.exists) {
-                this.userData = userDoc.data();
+            // First, check if user data is already in the user object (from localStorage or Firebase)
+            if (this.user && (this.user.userType || this.user.email)) {
+                // Use user data directly if available (demo mode or Firebase user with data)
+                this.userData = this.user;
+                console.log('Using user data from auth object:', this.user.email);
                 this.updateUI();
-            } else {
-                console.log('User not found in database - redirecting to login');
-                alert('Your account is not authorized. Please contact support.');
-                await this.auth.signOut();
-                window.location.href = 'login.html';
+                return;
             }
+
+            // Try to get user data from Firestore if available
+            if (this.db && this.user && this.user.uid) {
+                try {
+                    const userDoc = await this.db.collection('users').doc(this.user.uid).get();
+                    
+                    if (userDoc.exists) {
+                        this.userData = userDoc.data();
+                        console.log('Loaded user data from Firestore:', this.userData.email);
+                        this.updateUI();
+                        return;
+                    }
+                } catch (firestoreError) {
+                    console.warn('Firestore error (may be in demo mode):', firestoreError);
+                }
+            }
+
+            // Check localStorage for demo user data
+            const storedUser = localStorage.getItem('demo_user');
+            if (storedUser) {
+                try {
+                    const parsedUser = JSON.parse(storedUser);
+                    if (parsedUser && (parsedUser.email || parsedUser.uid)) {
+                        this.userData = parsedUser;
+                        this.user = parsedUser; // Update user object
+                        console.log('Using user data from localStorage:', parsedUser.email);
+                        this.updateUI();
+                        return;
+                    }
+                } catch (parseError) {
+                    console.warn('Error parsing stored user:', parseError);
+                }
+            }
+
+            // If we still don't have user data but have a user object, use it
+            if (this.user && (this.user.email || this.user.uid)) {
+                this.userData = this.user;
+                console.log('Using Firebase auth user object:', this.user.email);
+                this.updateUI();
+                return;
+            }
+
+            // Only redirect if we truly have no user data
+            console.log('No user data available - redirecting to login');
+            window.location.href = 'login.html';
         } catch (error) {
             console.error('Error loading user data:', error);
+            // Check localStorage as fallback before redirecting
+            const storedUser = localStorage.getItem('demo_user');
+            if (storedUser) {
+                try {
+                    this.userData = JSON.parse(storedUser);
+                    this.user = this.userData;
+                    this.updateUI();
+                    return;
+                } catch (parseError) {
+                    console.error('Error parsing stored user:', parseError);
+                }
+            }
+            // Only redirect if all options fail
             window.location.href = 'login.html';
         }
     }

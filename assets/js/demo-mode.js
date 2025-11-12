@@ -2,9 +2,13 @@
 // This provides a working demo without requiring Firebase setup
 
 // Check if we're in demo mode (no Firebase connection)
+// Only use demo mode if Firebase is truly not available
 const DEMO_MODE = typeof firebase === 'undefined' || !firebase.apps || firebase.apps.length === 0;
 
 console.log('DEMO_MODE:', DEMO_MODE);
+if (!DEMO_MODE) {
+    console.log('Firebase is available - demo mode will not be used');
+}
 
 // Demo Firebase-like wrapper
 const demoAuth = {
@@ -292,7 +296,8 @@ const demoFirestore = {
 };
 
 // Initialize Firebase or Demo Mode
-if (DEMO_MODE || typeof firebase === 'undefined' || !firebase.apps || firebase.apps.length === 0) {
+// Only initialize demo mode if Firebase is truly not available
+if (DEMO_MODE && (typeof firebase === 'undefined' || !firebase.apps || firebase.apps.length === 0)) {
     console.log('Running in DEMO MODE - using localStorage instead of Firebase');
     
     // Only create demo Firebase object if Firebase is not defined
@@ -316,7 +321,10 @@ if (DEMO_MODE || typeof firebase === 'undefined' || !firebase.apps || firebase.a
     console.log('- seller@demo.com (any password)');
     console.log('- admin@demo.com (any password)');
 } else {
-    console.log('Running with Firebase');
+    console.log('Running with Firebase - demo mode disabled');
+    // Make demoAuth available as fallback, but don't override Firebase
+    window.demoAuth = demoAuth;
+    window.demoFirestore = demoFirestore;
 }
 
 // Export for use in other files
