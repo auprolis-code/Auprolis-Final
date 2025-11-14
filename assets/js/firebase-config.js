@@ -23,8 +23,14 @@ try {
         // Initialize Firestore (NoSQL Document Database)
         const db = firebase.firestore();
         
-        // Initialize Realtime Database (JSON Database)
-        const realtimeDb = firebase.database();
+        // Initialize Realtime Database (JSON Database) - only if SDK is loaded
+        let realtimeDb = null;
+        if (firebase.database) {
+            realtimeDb = firebase.database();
+            console.log('Realtime Database initialized');
+        } else {
+            console.warn('Firebase Realtime Database SDK not loaded. Add firebase-database-compat.js to use Realtime Database.');
+        }
         
         // Google Auth Provider
         const googleProvider = new firebase.auth.GoogleAuthProvider();
@@ -37,12 +43,11 @@ try {
         // Export for use in other files
         window.auth = auth;
         window.db = db; // Firestore
-        window.realtimeDb = realtimeDb; // Realtime Database
+        window.realtimeDb = realtimeDb; // Realtime Database (may be null)
         window.googleProvider = googleProvider;
         
         console.log('Firebase initialized successfully');
         console.log('Firestore database initialized');
-        console.log('Realtime Database initialized');
     }
 } catch (error) {
     console.error('Firebase initialization failed:', error);
