@@ -1210,26 +1210,187 @@ class AdminDashboardHandler {
     }
 
     generateReport() {
-        const report = {
+        // Check if jsPDF is available
+        if (typeof window.jspdf === 'undefined') {
+            this.showMessage('PDF library not loaded. Please refresh the page.', 'error');
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Report data
+        const reportData = {
             generatedAt: new Date().toISOString(),
+            generatedDate: new Date().toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }),
             totalUsers: this.users.length,
             totalListings: this.listings.length,
             activeListings: this.listings.filter(l => l.status === 'active').length,
+            pendingListings: this.listings.filter(l => l.status === 'pending').length,
             totalTransactions: this.transactions.length,
             totalRevenue: this.transactions
                 .filter(t => t.status === 'completed')
                 .reduce((sum, t) => sum + (t.amount || 0), 0)
         };
 
-        const reportStr = JSON.stringify(report, null, 2);
-        const dataBlob = new Blob([reportStr], { type: 'application/json' });
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `admin-report-${Date.now()}.json`;
-        link.click();
+        // Set up PDF styling
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const margin = 20;
+        let yPos = 20;
+
+        // Header
+        doc.setFontSize(20);
+        doc.setFont(undefined, 'bold');
+        doc.text('Auprolis Admin Report', margin, yPos);
         
-        this.showMessage('Report generated and downloaded successfully!', 'success');
+        yPos += 10;
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Generated: ${reportData.generatedDate}`, margin, yPos);
+        
+        yPos += 15;
+
+        // Statistics Section
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text('Platform Statistics', margin, yPos);
+        
+        yPos += 10;
+        doc.setLineWidth(0.5);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 8;
+
+        // Statistics Table
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'normal');
+        
+        const stats = [
+            ['Total Users', reportData.totalUsers.toString()],
+            ['Total Listings', reportData.totalListings.toString()],
+            ['Active Listings', reportData.activeListings.toString()],
+            ['Pending Listings', reportData.pendingListings.toString()],
+            ['Total Transactions', reportData.totalTransactions.toString()],
+            ['Total Revenue', `BWP ${reportData.totalRevenue.toLocaleString()}`]
+        ];
+
+        stats.forEach(([label, value]) => {
+            if (yPos > 250) {
+                doc.addPage();
+                yPos = 20;
+            }
+            
+            doc.setFont(undefined, 'bold');
+            doc.text(label + ':', margin, yPos);
+            doc.setFont(undefined, 'normal');
+            doc.text(value, margin + 80, yPos);
+            yPos += 8;
+        });
+
+        yPos += 10;
+
+        // User Breakdown Section
+        if (yPos > 230) {
+            doc.addPage();
+            yPos = 20;
+        }
+
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.text('User Breakdown', margin, yPos);
+        
+        yPos += 10;
+        doc.setLineWidth(0.5);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 8;
+
+        // Count users by type
+        const userTypes = {};
+        this.users.forEach(user => {
+            const type = user.userType || 'unassigned';
+            userTypes[type] = (userTypes[type] || 0) + 1;
+        });
+
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'normal');
+        
+        Object.entries(userTypes).forEach(([type, count]) => {
+            if (yPos > 250) {
+                doc.addPage();
+                yPos = 20;
+            }
+            
+            const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+            doc.setFont(undefined, 'bold');
+            doc.text(`${typeLabel}:`, margin, yPos);
+            doc.setFont(undefined, 'normal');
+            doc.text(count.toString(), margin + 80, yPos);
+            yPos += 8;
+        });
+
+        yPos += 10;
+
+        // Listing Status Breakdown
+        if (yPos > 230) {
+            doc.addPage();
+            yPos = 20;
+        }
+
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.text('Listing Status Breakdown', margin, yPos);
+        
+        yPos += 10;
+        doc.setLineWidth(0.5);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 8;
+
+        const listingStatuses = {};
+        this.listings.forEach(listing => {
+            const status = listing.status || 'unknown';
+            listingStatuses[status] = (listingStatuses[status] || 0) + 1;
+        });
+
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'normal');
+        
+        Object.entries(listingStatuses).forEach(([status, count]) => {
+            if (yPos > 250) {
+                doc.addPage();
+                yPos = 20;
+            }
+            
+            const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+            doc.setFont(undefined, 'bold');
+            doc.text(`${statusLabel}:`, margin, yPos);
+            doc.setFont(undefined, 'normal');
+            doc.text(count.toString(), margin + 80, yPos);
+            yPos += 8;
+        });
+
+        // Footer on last page
+        const pageCount = doc.internal.pages.length - 1;
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+            `Page 1 of ${pageCount} | Auprolis Admin Dashboard`,
+            pageWidth / 2,
+            doc.internal.pageSize.getHeight() - 10,
+            { align: 'center' }
+        );
+
+        // Save the PDF
+        const fileName = `admin-report-${Date.now()}.pdf`;
+        doc.save(fileName);
+        
+        this.showMessage('PDF report generated and downloaded successfully!', 'success');
     }
 
     clearCache() {
