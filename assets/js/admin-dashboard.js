@@ -293,7 +293,29 @@ class AdminDashboardHandler {
     }
 
     async loadListings() {
-        // Load from demo data or Firebase
+        // Try to load from Google Sheets first
+        if (typeof googleSheetsService !== 'undefined') {
+            try {
+                const sheetListings = await googleSheetsService.readListings();
+                if (sheetListings && sheetListings.length > 0) {
+                    this.listings = sheetListings;
+                    console.log(`Loaded ${this.listings.length} listings from Google Sheets`);
+                    
+                    // Start real-time polling for admin dashboard
+                    googleSheetsService.startListingsPolling((listings) => {
+                        console.log('📥 Admin: Received updated listings:', listings.length);
+                        this.listings = listings;
+                        this.renderListings();
+                        this.updateDashboardStats();
+                    });
+                    return;
+                }
+            } catch (error) {
+                console.warn('Could not load listings from Google Sheets, falling back to local data:', error);
+            }
+        }
+        
+        // Fallback to demo data or Firebase
         if (typeof DEMO_ASSETS !== 'undefined') {
             this.listings = DEMO_ASSETS.map(asset => ({
                 ...asset,
@@ -461,7 +483,7 @@ class AdminDashboardHandler {
                 <div class="listing-content">
                     <h4>${listing.title}</h4>
                     <p class="listing-location">${listing.location}</p>
-                    <p class="listing-price">BWP ${(listing.currentBid || listing.startingBid || 0).toLocaleString()}</p>
+                    <p class="listing-price">BWP ${(listing.startingBid || listing.currentBid || 0).toLocaleString()}</p>
                     <div class="listing-status ${listing.status}">${listing.status}</div>
                     <div class="listing-actions">
                         <button class="btn btn-secondary" onclick="adminHandler.viewListing('${listing.id}')">View</button>
@@ -588,10 +610,10 @@ class AdminDashboardHandler {
         listingData.createdAt = new Date();
         listingData.startDate = listingData.startDate ? new Date(listingData.startDate) : new Date();
         listingData.endDate = listingData.endDate ? new Date(listingData.endDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-        listingData.bidCount = 0;
         listingData.viewCount = 0;
-        listingData.currentBid = parseInt(listingData.startingBid) || 0;
         listingData.startingBid = parseInt(listingData.startingBid) || 0;
+        // Set currentBid equal to startingBid for backward compatibility (platform uses reservations, not bidding)
+        listingData.currentBid = listingData.startingBid;
         listingData.images = imageUrls.length > 0 ? imageUrls : ['assets/images/placeholder.txt'];
         
         // Add contact info
@@ -655,7 +677,7 @@ class AdminDashboardHandler {
     viewListing(listingId) {
         const listing = this.listings.find(l => l.id === listingId);
         if (listing) {
-            alert(`Listing: ${listing.title}\nStatus: ${listing.status}\nPrice: BWP ${(listing.currentBid || listing.startingBid || 0).toLocaleString()}`);
+            alert(`Listing: ${listing.title}\nStatus: ${listing.status}\nStarting Price: BWP ${(listing.startingBid || listing.currentBid || 0).toLocaleString()}`);
         }
     }
 
@@ -945,7 +967,7 @@ class AdminDashboardHandler {
                 <div class="listing-content">
                     <h4>${listing.title}</h4>
                     <p class="listing-location">${listing.location}</p>
-                    <p class="listing-price">BWP ${(listing.currentBid || listing.startingBid || 0).toLocaleString()}</p>
+                    <p class="listing-price">BWP ${(listing.startingBid || listing.currentBid || 0).toLocaleString()}</p>
                     <div class="listing-status ${listing.status}">${listing.status}</div>
                     <div class="listing-actions">
                         <button class="btn btn-secondary" onclick="adminHandler.viewListing('${listing.id}')">View</button>

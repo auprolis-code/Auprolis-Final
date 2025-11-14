@@ -170,7 +170,7 @@ class ReservationHandler {
                     </div>
                     <div class="asset-detail">
                         <span class="asset-detail-label">Price:</span>
-                        <span class="asset-detail-value">BWP ${(this.currentAsset.currentBid || this.currentAsset.startingBid || 0).toLocaleString()}</span>
+                        <span class="asset-detail-value">BWP ${(this.currentAsset.startingBid || this.currentAsset.currentBid || 0).toLocaleString()}</span>
                     </div>
                     ${this.currentAsset.endDate ? `
                     <div class="asset-detail">
@@ -300,7 +300,7 @@ class ReservationHandler {
                 </div>
                 <div class="reservation-confirmation-detail">
                     <span class="reservation-confirmation-detail-label">Price:</span>
-                    <span class="reservation-confirmation-detail-value">BWP ${(this.currentAsset.currentBid || this.currentAsset.startingBid || 0).toLocaleString()}</span>
+                    <span class="reservation-confirmation-detail-value">BWP ${(this.currentAsset.startingBid || this.currentAsset.currentBid || 0).toLocaleString()}</span>
                 </div>
                 <div class="reservation-confirmation-detail">
                     <span class="reservation-confirmation-detail-label">Your Name:</span>

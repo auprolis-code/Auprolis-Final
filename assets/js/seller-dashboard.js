@@ -307,70 +307,50 @@ class SellerDashboardHandler {
     }
 
     async loadListings() {
-        try {
-            // In a real app, this would fetch from Firebase
-            // For now, we'll use sample data
-            this.listings = [
-                {
-                    id: 'listing-001',
-                    title: '2018 Toyota Hilux Double Cab',
-                    category: 'vehicles',
-                    location: 'Gaborone, Botswana',
-                    startingBid: 150000,
-                    currentBid: 175000,
-                    reservePrice: 150000,
-                    startDate: new Date('2024-01-15T10:00:00Z'),
-                    endDate: new Date('2024-02-15T15:00:00Z'),
-                    status: 'active',
-                    condition: 'Excellent',
-                    description: 'Well-maintained Toyota Hilux in excellent condition.',
-                    images: ['assets/images/vehicles/vehicles_2018-toyota-hilux-double-cab_gaborone_01.jpg'],
-                    bidCount: 12,
-                    viewCount: 45,
-                    createdAt: new Date('2024-01-10T08:00:00Z')
-                },
-                {
-                    id: 'listing-002',
-                    title: 'Commercial Building - CBD',
-                    category: 'property',
-                    location: 'Gaborone CBD, Botswana',
-                    startingBid: 2500000,
-                    currentBid: 2750000,
-                    reservePrice: 2500000,
-                    startDate: new Date('2024-02-01T10:00:00Z'),
-                    endDate: new Date('2024-03-01T16:00:00Z'),
-                    status: 'active',
-                    condition: 'Excellent',
-                    description: 'Prime commercial property in the heart of Gaborone CBD.',
-                    images: ['assets/images/property/property_commercial-building-cbd_gaborone_01.jpg'],
-                    bidCount: 8,
-                    viewCount: 32,
-                    createdAt: new Date('2024-01-25T09:00:00Z')
-                },
-                {
-                    id: 'listing-003',
-                    title: 'Massey Ferguson Tractor',
-                    category: 'equipment',
-                    location: 'Francistown, Botswana',
-                    startingBid: 85000,
-                    currentBid: 92000,
-                    reservePrice: 85000,
-                    startDate: new Date('2024-01-20T09:00:00Z'),
-                    endDate: new Date('2024-02-20T14:00:00Z'),
-                    status: 'ended',
-                    condition: 'Good',
-                    description: 'Heavy-duty farming tractor suitable for large-scale agricultural operations.',
-                    images: ['assets/images/equipment/equipment_massey-ferguson-tractor_francistown_01.jpg'],
-                    bidCount: 15,
-                    viewCount: 67,
-                    createdAt: new Date('2024-01-15T10:00:00Z'),
-                    soldPrice: 95000,
-                    soldTo: 'John Smith'
+        // Try to load from Google Sheets first
+        if (typeof googleSheetsService !== 'undefined') {
+            try {
+                const allListings = await googleSheetsService.readListings();
+                // Filter listings for current seller
+                const sheetListings = allListings.filter(listing => 
+                    listing.sellerId === this.user.uid || 
+                    listing.sellerEmail === this.user.email
+                );
+                
+                if (sheetListings && sheetListings.length > 0) {
+                    this.listings = sheetListings;
+                    console.log(`Loaded ${this.listings.length} listings from Google Sheets for seller`);
+                    
+                    // Start real-time polling
+                    googleSheetsService.startListingsPolling((allListings) => {
+                        const sellerListings = allListings.filter(listing => 
+                            listing.sellerId === this.user.uid || 
+                            listing.sellerEmail === this.user.email
+                        );
+                        this.listings = sellerListings;
+                        this.renderListings();
+                    });
+                    return;
                 }
-            ];
-        } catch (error) {
-            console.error('Error loading listings:', error);
-            this.listings = [];
+            } catch (error) {
+                console.warn('Could not load listings from Google Sheets:', error);
+            }
+        }
+        
+        // Fallback to demo data or Firebase
+        if (typeof DEMO_ASSETS !== 'undefined') {
+            this.listings = DEMO_ASSETS.map(asset => ({
+                ...asset,
+                status: asset.status || 'active'
+            }));
+        } else if (this.db && this.db.collection) {
+            try {
+                const snapshot = await this.db.collection('listings').get();
+                this.listings = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } catch (error) {
+                console.error('Error loading listings:', error);
+                this.listings = [];
+            }
         }
     }
 
@@ -420,16 +400,12 @@ class SellerDashboardHandler {
                     
                     <div class="listing-stats">
                         <div class="stat-item">
-                            <span class="stat-label">Current Bid:</span>
-                            <span class="stat-value">BWP ${listing.currentBid.toLocaleString()}</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Bids:</span>
-                            <span class="stat-value">${listing.bidCount}</span>
+                            <span class="stat-label">Starting Price:</span>
+                            <span class="stat-value">BWP ${(listing.startingBid || listing.currentBid || 0).toLocaleString()}</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-label">Views:</span>
-                            <span class="stat-value">${listing.viewCount}</span>
+                            <span class="stat-value">${listing.viewCount || 0}</span>
                         </div>
                     </div>
 
@@ -870,9 +846,10 @@ class SellerDashboardHandler {
         listingData.sellerName = this.user.displayName || this.user.email;
         listingData.status = 'pending';
         listingData.createdAt = new Date();
-        listingData.bidCount = 0;
         listingData.viewCount = 0;
-        listingData.currentBid = parseInt(listingData.startingBid);
+        listingData.startingBid = parseInt(listingData.startingBid) || 0;
+        // Set currentBid equal to startingBid for backward compatibility (platform uses reservations, not bidding)
+        listingData.currentBid = listingData.startingBid;
 
         // In a real app, this would save to Firebase
         console.log('Creating listing:', listingData);
@@ -1138,13 +1115,10 @@ class SellerDashboardHandler {
                         <p><strong>Category:</strong> ${asset.category}</p>
                         <p><strong>Location:</strong> ${asset.location}</p>
                         <p><strong>Condition:</strong> ${asset.condition}</p>
-                        <p><strong>Starting Bid:</strong> BWP ${asset.startingBid.toLocaleString()}</p>
-                        <p><strong>Current Bid:</strong> BWP ${asset.currentBid.toLocaleString()}</p>
-                        <p><strong>Reserve Price:</strong> BWP ${asset.reservePrice.toLocaleString()}</p>
-                        <p><strong>Start Date:</strong> ${new Date(asset.startDate).toLocaleString()}</p>
+                        <p><strong>Starting Price:</strong> BWP ${(asset.startingBid || asset.currentBid || 0).toLocaleString()}</p>
+                        <p><strong>Start Date:</strong> ${asset.startDate ? new Date(asset.startDate).toLocaleString() : 'N/A'}</p>
                         <p><strong>End Date:</strong> ${new Date(asset.endDate).toLocaleString()}</p>
-                        <p><strong>Bid Count:</strong> ${asset.bidCount}</p>
-                        <p><strong>View Count:</strong> ${asset.viewCount}</p>
+                        <p><strong>View Count:</strong> ${asset.viewCount || 0}</p>
                         <p>${asset.description}</p>
                     </div>
                     

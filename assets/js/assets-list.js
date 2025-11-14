@@ -4,8 +4,12 @@ class AssetsListHandler {
         this.assets = SAMPLE_ASSETS || [];
         this.filteredAssets = [...this.assets];
         this.currentPage = 1;
-        this.itemsPerPage = 6;
-        this.isLoggedIn = this.checkLoginStatus();
+        this.itemsPerPage = 12;
+        this.isLoggedIn = false;
+        
+        // Initialize Google Sheets integration
+        this.initGoogleSheetsIntegration();
+        
         this.currentFilters = {
             search: '',
             category: '',
@@ -20,15 +24,34 @@ class AssetsListHandler {
     }
 
     init() {
+        this.checkAuthState();
         this.bindEvents();
         this.renderAssets();
         this.updateLoadMoreButton();
     }
 
+    checkAuthState() {
+        // Check authentication state - Firebase or localStorage
+        const auth = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth() : null;
+        
+        if (auth && auth.onAuthStateChanged) {
+            auth.onAuthStateChanged((user) => {
+                this.isLoggedIn = !!user;
+                // Re-render assets to update visibility based on login status
+                this.renderAssets();
+            });
+        } else {
+            // Fallback: Check localStorage for demo user
+            const storedUser = localStorage.getItem('demo_user');
+            const userLoggedIn = localStorage.getItem('userLoggedIn') === 'true';
+            this.isLoggedIn = !!(storedUser || userLoggedIn);
+        }
+    }
+
     checkLoginStatus() {
         // Check if user is logged in (this would typically check Firebase auth)
         // For now, we'll simulate this
-        return localStorage.getItem('userLoggedIn') === 'true';
+        return this.isLoggedIn || localStorage.getItem('userLoggedIn') === 'true';
     }
 
     bindEvents() {
@@ -102,6 +125,47 @@ class AssetsListHandler {
         this.bindSearchSuggestions();
     }
 
+    async initGoogleSheetsIntegration() {
+        // Check if Google Sheets service is available
+        if (typeof googleSheetsService === 'undefined') {
+            console.warn('Google Sheets service not available, using demo data');
+            return;
+        }
+        
+        try {
+            // Load listings from Google Sheets
+            await this.loadListingsFromGoogleSheets();
+            
+            // Start real-time polling
+            googleSheetsService.startListingsPolling((listings) => {
+                console.log('📥 Received updated listings from Google Sheets:', listings.length);
+                this.assets = listings;
+                this.filteredAssets = [...this.assets];
+                this.currentPage = 1;
+                this.renderAssets();
+            });
+        } catch (error) {
+            console.error('Error initializing Google Sheets integration:', error);
+        }
+    }
+    
+    async loadListingsFromGoogleSheets() {
+        try {
+            const listings = await googleSheetsService.readListings();
+            if (listings && listings.length > 0) {
+                console.log(`✅ Loaded ${listings.length} listings from Google Sheets`);
+                this.assets = listings;
+                this.filteredAssets = [...this.assets];
+                this.renderAssets();
+            } else {
+                console.log('No listings found in Google Sheets, using demo data');
+            }
+        } catch (error) {
+            console.error('Error loading listings from Google Sheets:', error);
+            // Fallback to demo data
+        }
+    }
+
     handleSearch(searchTerm) {
         this.currentFilters.search = searchTerm;
         this.applyFilters();
@@ -156,7 +220,7 @@ class AssetsListHandler {
         if (priceRangeFilter && priceRangeFilter.value) {
             const priceRange = priceRangeFilter.value;
             filtered = filtered.filter(asset => {
-                const price = asset.currentBid;
+                const price = asset.startingBid || asset.currentBid || 0;
                 switch (priceRange) {
                     case '0-50000':
                         return price < 50000;
@@ -401,9 +465,9 @@ class AssetsListHandler {
                 case 'oldest':
                     return new Date(a.startDate) - new Date(b.startDate);
                 case 'price-low':
-                    return a.currentBid - b.currentBid;
+                    return (a.startingBid || a.currentBid || 0) - (b.startingBid || b.currentBid || 0);
                 case 'price-high':
-                    return b.currentBid - a.currentBid;
+                    return (b.startingBid || b.currentBid || 0) - (a.startingBid || a.currentBid || 0);
                 case 'ending-soon':
                     return new Date(a.endDate) - new Date(b.endDate);
                 default:
@@ -446,12 +510,12 @@ class AssetsListHandler {
                 </div>
                 <div class="asset-content">
                     <h3 class="asset-title">${asset.title}</h3>
-                    <div class="asset-location">${asset.location}</div>
-                    <div class="asset-date">Ends: ${endDate.toLocaleDateString()}</div>
+                    ${this.isLoggedIn ? `<div class="asset-location">${asset.location}</div>` : ''}
+                    ${this.isLoggedIn ? `<div class="asset-date">Ends: ${endDate.toLocaleDateString()}</div>` : ''}
                     <div class="asset-price">
                         <div>
-                            <div class="current-bid">BWP ${asset.currentBid.toLocaleString()}</div>
-                            <div class="bid-label">Price</div>
+                            <div class="current-bid">BWP ${(asset.startingBid || asset.currentBid || 0).toLocaleString()}</div>
+                            <div class="bid-label">Starting Price</div>
                         </div>
                     </div>
                     <div class="asset-actions">
@@ -506,11 +570,7 @@ class AssetsListHandler {
     }
 
     viewAssetDetails(assetId) {
-        if (!this.isLoggedIn) {
-            this.showLoginModal();
-            return;
-        }
-
+        // Allow visitors to view limited details
         const asset = this.assets.find(a => a.id === assetId);
         if (!asset) return;
 
@@ -532,19 +592,32 @@ class AssetsListHandler {
                     </div>
                     <div class="asset-details-info">
                         <h4>${asset.title}</h4>
-                        <p><strong>Location:</strong> ${asset.location}</p>
-                        <p><strong>Condition:</strong> ${asset.condition}</p>
-                        <p><strong>Starting Bid:</strong> BWP ${asset.startingBid.toLocaleString()}</p>
-                        <p><strong>Current Bid:</strong> BWP ${asset.currentBid.toLocaleString()}</p>
-                        <p><strong>Ends:</strong> ${new Date(asset.endDate).toLocaleString()}</p>
-                        <div class="price">BWP ${asset.currentBid.toLocaleString()}</div>
-                        <p>${asset.description}</p>
-                        <div class="contact-info">
-                            <h5>Contact Information</h5>
-                            <p><strong>Name:</strong> ${asset.contactInfo.name}</p>
-                            <p><strong>Email:</strong> ${asset.contactInfo.email}</p>
-                            <p><strong>Phone:</strong> ${asset.contactInfo.phone}</p>
-                        </div>
+                        <p><strong>Starting Price:</strong> BWP ${(asset.startingBid || asset.currentBid || 0).toLocaleString()}</p>
+                        ${this.isLoggedIn ? `
+                            <p><strong>Location:</strong> ${asset.location}</p>
+                            <p><strong>Condition:</strong> ${asset.condition}</p>
+                            <p><strong>Ends:</strong> ${new Date(asset.endDate).toLocaleString()}</p>
+                            <div class="price">BWP ${(asset.startingBid || asset.currentBid || 0).toLocaleString()}</div>
+                            <p>${asset.description}</p>
+                            <div class="contact-info">
+                                <h5>Contact Information</h5>
+                                <p><strong>Name:</strong> ${asset.contactInfo.name}</p>
+                                <p><strong>Email:</strong> ${asset.contactInfo.email}</p>
+                                <p><strong>Phone:</strong> ${asset.contactInfo.phone}</p>
+                            </div>
+                        ` : `
+                            <div class="login-prompt" style="margin-top: 20px; padding: 15px; background-color: #f5f5f5; border-radius: 5px;">
+                                <p style="margin: 0 0 10px 0;"><strong>Login required to view:</strong></p>
+                                <ul style="margin: 0; padding-left: 20px;">
+                                    <li>Location</li>
+                                    <li>Contact Information</li>
+                                    <li>Full Description</li>
+                                </ul>
+                                <button class="btn-login" onclick="assetsListHandler.showLoginModal(); assetsListHandler.closeModal('assetModal');" style="margin-top: 10px;">
+                                    Login to View More
+                                </button>
+                            </div>
+                        `}
                     </div>
                 </div>
             `;

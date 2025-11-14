@@ -15,28 +15,37 @@ class GoogleSheetsService {
         // Format: gid is the tab ID from the URL when you click on each tab
         // Buyers tab gid: 0 (verified from URL)
         // Sheriff tab gid: 2054246567 (verified from URL)
+        // Listings tab gid: 845839268 (verified from URL)
         this.csvExportUrls = {
             buyers: `https://docs.google.com/spreadsheets/d/${this.sheetId}/gviz/tq?tqx=out:csv&gid=0`,
-            sheriffs: `https://docs.google.com/spreadsheets/d/${this.sheetId}/gviz/tq?tqx=out:csv&gid=2054246567`
+            sheriffs: `https://docs.google.com/spreadsheets/d/${this.sheetId}/gviz/tq?tqx=out:csv&gid=2054246567`,
+            listings: `https://docs.google.com/spreadsheets/d/${this.sheetId}/gviz/tq?tqx=out:csv&gid=845839268`
         };
         
         // Alternative: Published CSV URLs (if the above doesn't work, try these)
         // Using the same gid values
         this.publishedCsvUrls = {
             buyers: `https://docs.google.com/spreadsheets/d/e/${this.publishId}/pub?output=csv&gid=0`,
-            sheriffs: `https://docs.google.com/spreadsheets/d/e/${this.publishId}/pub?output=csv&gid=2054246567`
+            sheriffs: `https://docs.google.com/spreadsheets/d/e/${this.publishId}/pub?output=csv&gid=2054246567`,
+            listings: `https://docs.google.com/spreadsheets/d/e/${this.publishId}/pub?output=csv&gid=845839268`
         };
         
         // Cache for sheet data
         this.cachedData = {
             buyers: null,
-            sheriffs: null
+            sheriffs: null,
+            listings: null
         };
         this.cacheTimestamp = {
             buyers: null,
-            sheriffs: null
+            sheriffs: null,
+            listings: null
         };
         this.cacheDuration = 5 * 60 * 1000; // 5 minutes
+        
+        // Real-time polling interval (30 seconds)
+        this.pollingInterval = 30 * 1000;
+        this.pollingTimer = null;
     }
 
     /**
@@ -84,8 +93,12 @@ class GoogleSheetsService {
     getTabUrl(tabName) {
         // Google Sheets URL with tab parameter
         // Using the actual gid values from the sheet
-        // Buyers tab: gid=0, Sheriff tab: gid=2054246567
-        const gid = tabName === 'sheriffs' ? '2054246567' : '0';
+        const gidMap = {
+            'buyers': '0',
+            'sheriffs': '2054246567',
+            'listings': '845839268'
+        };
+        const gid = gidMap[tabName] || '0';
         return `${this.sheetUrl}#gid=${gid}`;
     }
 
@@ -399,6 +412,167 @@ class GoogleSheetsService {
             sheriffs: 'Open the Sheriffs tab and check the URL for #gid=XXXXX',
             note: 'Update the gid values in csvExportUrls in the constructor'
         };
+    }
+
+    /**
+     * Read listings from Google Sheets
+     * @returns {Array} Array of listing objects
+     */
+    async readListings() {
+        try {
+            // Check cache first
+            if (this.cachedData.listings && this.cacheTimestamp.listings) {
+                const now = Date.now();
+                if (now - this.cacheTimestamp.listings < this.cacheDuration) {
+                    return this.cachedData.listings;
+                }
+            }
+
+            let csvUrl = this.csvExportUrls.listings;
+            let usePublished = false;
+            
+            if (!csvUrl) {
+                console.warn('Listings tab URL not configured.');
+                return [];
+            }
+
+            // Try to fetch CSV data
+            let response = await fetch(csvUrl);
+            
+            // If the first method fails, try the published URL method
+            if (!response.ok && this.publishedCsvUrls.listings) {
+                console.log('Trying published URL for listings tab...');
+                csvUrl = this.publishedCsvUrls.listings;
+                response = await fetch(csvUrl);
+                usePublished = true;
+            }
+            
+            if (!response.ok) {
+                throw new Error(`Failed to fetch listings from Google Sheets`);
+            }
+
+            const csvText = await response.text();
+            console.log(`📥 CSV data received for listings tab (${csvText.length} characters)`);
+            
+            const listings = this.parseListingsCSV(csvText);
+            console.log(`✓ Parsed ${listings.length} listings from Google Sheets`);
+            
+            // Cache the data
+            this.cachedData.listings = listings;
+            this.cacheTimestamp.listings = Date.now();
+            
+            return listings;
+        } catch (error) {
+            console.error('Error reading listings from Google Sheets:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Parse listings CSV into listing objects
+     */
+    parseListingsCSV(csvText) {
+        const lines = csvText.split('\n').filter(line => line.trim());
+        if (lines.length === 0) return [];
+
+        // Parse header line
+        const headerLine = this.parseCSVLine(lines[0]);
+        const headers = headerLine.map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
+        console.log('📋 Listings CSV Headers detected:', headers);
+        
+        const listings = [];
+
+        for (let i = 1; i < lines.length; i++) {
+            const values = this.parseCSVLine(lines[i]);
+            if (values.length === 0) continue;
+
+            const listing = {};
+            headers.forEach((header, index) => {
+                if (values[index] !== undefined) {
+                    const value = values[index].trim().replace(/^"|"$/g, '');
+                    listing[header] = value;
+                }
+            });
+
+            // Map CSV columns to listing object structure
+            // Columns: Title, Category, Location, Description, Starting Bid, Current Bid, End date, Images, Seller ID, Seller Name, Seller Email, Status, Condition
+            // Note: Only Starting Bid is used (platform is for reservations, not bidding)
+            const mappedListing = {
+                id: listing.id || `listing-${Date.now()}-${i}`,
+                title: listing.title || '',
+                category: listing.category || '',
+                location: listing.location || '',
+                description: listing.description || '',
+                startingBid: parseFloat(listing['starting bid'] || listing.startingbid || listing.price || 0),
+                // Keep currentBid for backward compatibility, but it equals startingBid
+                currentBid: parseFloat(listing['starting bid'] || listing.startingbid || listing.price || 0),
+                endDate: listing['end date'] || listing.enddate || listing['auction end'] || '',
+                images: listing.images ? listing.images.split(',').map(img => img.trim()).filter(img => img) : (listing.image ? [listing.image] : ['assets/images/placeholder.jpg']),
+                sellerId: listing['seller id'] || listing.sellerid || '',
+                sellerName: listing['seller name'] || listing.sellername || '',
+                sellerEmail: listing['seller email'] || listing.selleremail || '',
+                sellerType: listing['seller type'] || listing.sellertype || 'sheriff',
+                status: (listing.status || 'active').toLowerCase(),
+                condition: listing.condition || 'used',
+                // Use seller info for contact (no separate contact fields)
+                contactInfo: {
+                    name: listing['seller name'] || listing.sellername || '',
+                    email: listing['seller email'] || listing.selleremail || '',
+                    phone: '' // Phone not in sheet, can be added later if needed
+                },
+                viewCount: parseInt(listing['view count'] || listing.viewcount || 0),
+                createdAt: listing['created at'] || listing.createdat || new Date().toISOString()
+            };
+
+            // Validate required fields
+            if (mappedListing.title && mappedListing.location) {
+                listings.push(mappedListing);
+                console.log(`  ✅ Parsed listing: ${mappedListing.title}`);
+            } else {
+                console.warn(`  ⚠ Skipping row ${i + 1}: Missing required fields (title or location)`);
+            }
+        }
+
+        return listings;
+    }
+
+    /**
+     * Start real-time polling for listings
+     * @param {Function} callback - Function to call when listings are updated
+     * @param {number} interval - Polling interval in milliseconds (default: 30 seconds)
+     */
+    startListingsPolling(callback, interval = null) {
+        const pollInterval = interval || this.pollingInterval;
+        
+        // Clear existing timer if any
+        if (this.pollingTimer) {
+            clearInterval(this.pollingTimer);
+        }
+        
+        // Initial fetch
+        this.readListings().then(listings => {
+            if (callback) callback(listings);
+        });
+        
+        // Set up polling
+        this.pollingTimer = setInterval(async () => {
+            console.log('🔄 Polling for new listings...');
+            const listings = await this.readListings();
+            if (callback) callback(listings);
+        }, pollInterval);
+        
+        console.log(`✅ Started real-time listings polling (every ${pollInterval / 1000} seconds)`);
+    }
+
+    /**
+     * Stop real-time polling
+     */
+    stopListingsPolling() {
+        if (this.pollingTimer) {
+            clearInterval(this.pollingTimer);
+            this.pollingTimer = null;
+            console.log('⏹ Stopped listings polling');
+        }
     }
 }
 
