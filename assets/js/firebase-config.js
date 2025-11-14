@@ -12,10 +12,17 @@ const firebaseConfig = {
     databaseURL: "https://auprolis-mvp2-default-rtdb.firebaseio.com"
 };
 
-// Initialize Firebase - with fallback to demo mode
-try {
-    if (typeof firebase !== 'undefined' && firebase.initializeApp) {
-        firebase.initializeApp(firebaseConfig);
+// Initialize Firebase - Production Ready
+// Note: Demo mode will only activate if Firebase truly fails to initialize
+if (typeof firebase !== 'undefined' && firebase.initializeApp) {
+    try {
+        // Check if Firebase is already initialized
+        if (firebase.apps.length === 0) {
+            firebase.initializeApp(firebaseConfig);
+            console.log('✅ Firebase initialized successfully');
+        } else {
+            console.log('✅ Firebase already initialized');
+        }
         
         // Initialize Firebase Auth
         const auth = firebase.auth();
@@ -25,11 +32,11 @@ try {
         
         // Initialize Realtime Database (JSON Database) - only if SDK is loaded
         let realtimeDb = null;
-        if (firebase.database) {
+        if (typeof firebase.database === 'function') {
             realtimeDb = firebase.database();
-            console.log('Realtime Database initialized');
+            console.log('✅ Realtime Database initialized');
         } else {
-            console.warn('Firebase Realtime Database SDK not loaded. Add firebase-database-compat.js to use Realtime Database.');
+            console.warn('⚠️ Firebase Realtime Database SDK not loaded. This is optional and won\'t affect core functionality.');
         }
         
         // Google Auth Provider
@@ -46,12 +53,15 @@ try {
         window.realtimeDb = realtimeDb; // Realtime Database (may be null)
         window.googleProvider = googleProvider;
         
-        console.log('Firebase initialized successfully');
-        console.log('Firestore database initialized');
+        console.log('✅ Firestore database initialized');
+        console.log('✅ Firebase Authentication ready');
+    } catch (error) {
+        console.error('❌ Firebase initialization failed:', error);
+        console.error('Error details:', error.message);
+        // Don't throw - let demo mode handle it
     }
-} catch (error) {
-    console.error('Firebase initialization failed:', error);
-    console.log('Running in offline/demo mode');
+} else {
+    console.warn('⚠️ Firebase SDK not loaded. Application will run in demo mode.');
 }
 
 // Note: Demo mode will be handled by demo-mode.js if loaded
