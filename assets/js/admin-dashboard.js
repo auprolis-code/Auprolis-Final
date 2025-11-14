@@ -290,6 +290,21 @@ class AdminDashboardHandler {
         
         // Load transactions
         await this.loadTransactions();
+        
+        // Update all dashboard components after data is loaded
+        this.updateDashboardStats();
+        this.loadRecentActivity();
+        this.loadSystemAlerts();
+        
+        // Set up periodic refresh (every 30 seconds)
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+        }
+        this.refreshInterval = setInterval(() => {
+            this.updateDashboardStats();
+            this.loadRecentActivity();
+            this.loadSystemAlerts();
+        }, 30000); // Refresh every 30 seconds
     }
 
     async loadListings() {
@@ -307,6 +322,8 @@ class AdminDashboardHandler {
                         this.listings = listings;
                         this.renderListings();
                         this.updateDashboardStats();
+                        this.loadRecentActivity();
+                        this.loadSystemAlerts();
                     });
                     return;
                 }
@@ -347,9 +364,11 @@ class AdminDashboardHandler {
                         firstName: user.firstName,
                         lastName: user.lastName,
                         userType: user.userType || 'buyer', // userType is added by readSheetData when combining tabs
-                        status: 'active', // Default status
+                        status: user.status || 'active',
+                        verified: user.verified !== false, // Default to verified unless explicitly false
                         phone: user.phone || '',
-                        createdAt: new Date() // Default creation date
+                        createdAt: user.createdAt ? new Date(user.createdAt) : new Date(),
+                        joinDate: user.joinDate ? new Date(user.joinDate) : new Date()
                     }));
                     console.log(`Loaded ${this.users.length} users from Google Sheets`);
                     return;
@@ -413,14 +432,53 @@ class AdminDashboardHandler {
         // Update completed auctions
         const completedAuctionsCount = document.getElementById('completedAuctionsCount');
         if (completedAuctionsCount) {
-            completedAuctionsCount.textContent = this.listings.filter(l => l.status === 'ended').length;
+            completedAuctionsCount.textContent = this.listings.filter(l => l.status === 'ended' || l.status === 'completed').length;
         }
 
         // Update pending approvals
         const pendingApprovalsCount = document.getElementById('pendingApprovalsCount');
         if (pendingApprovalsCount) {
-            pendingApprovalsCount.textContent = this.listings.filter(l => l.status === 'pending').length;
+            const pendingListings = this.listings.filter(l => l.status === 'pending').length;
+            const pendingUsers = this.users.filter(u => u.status === 'pending' || !u.verified).length;
+            pendingApprovalsCount.textContent = pendingListings + pendingUsers;
         }
+
+        // Update platform health
+        const platformHealthCount = document.getElementById('platformHealthCount');
+        if (platformHealthCount) {
+            const health = this.calculatePlatformHealth();
+            platformHealthCount.textContent = `${health}%`;
+        }
+    }
+
+    calculatePlatformHealth() {
+        // Calculate platform health based on various factors
+        let healthScore = 100;
+        
+        // Check for critical issues
+        const totalListings = this.listings.length;
+        const activeListings = this.listings.filter(l => l.status === 'active').length;
+        const pendingListings = this.listings.filter(l => l.status === 'pending').length;
+        const totalUsers = this.users.length;
+        const activeUsers = this.users.filter(u => u.status !== 'suspended').length;
+        
+        // Deduct points for issues
+        if (totalListings === 0) {
+            healthScore -= 20; // No listings is a problem
+        } else if (activeListings === 0 && pendingListings > 0) {
+            healthScore -= 15; // All listings pending
+        }
+        
+        if (totalUsers === 0) {
+            healthScore -= 10; // No users
+        } else if (activeUsers / totalUsers < 0.5) {
+            healthScore -= 10; // Too many suspended users
+        }
+        
+        // Check for system errors (if we had error tracking)
+        // For now, assume system is healthy if we have data
+        
+        return Math.max(0, Math.min(100, healthScore));
     }
 
     switchTab(tabName) {
@@ -646,9 +704,11 @@ class AdminDashboardHandler {
         this.showMessage('Listing created successfully!', 'success');
         this.closeCreateListingModal();
         
-        // Refresh listings display
+        // Refresh listings display and dashboard
         this.renderListings();
         this.updateDashboardStats();
+        this.loadRecentActivity();
+        this.loadSystemAlerts();
     }
 
     handleImageUpload(e) {
@@ -685,9 +745,12 @@ class AdminDashboardHandler {
         const listing = this.listings.find(l => l.id === listingId);
         if (listing) {
             listing.status = 'active';
+            listing.approvedAt = new Date().toISOString();
             this.showMessage(`Listing "${listing.title}" approved!`, 'success');
             this.renderListings();
             this.updateDashboardStats();
+            this.loadRecentActivity();
+            this.loadSystemAlerts();
         }
     }
 
@@ -1178,7 +1241,7 @@ class AdminDashboardHandler {
 
     // Quick Actions
     verifyPendingUsers() {
-        const pendingUsers = this.users.filter(u => u.status === 'pending');
+        const pendingUsers = this.users.filter(u => u.status === 'pending' || !u.verified);
         if (pendingUsers.length === 0) {
             this.showMessage('No pending users to verify.', 'info');
             return;
@@ -1186,11 +1249,15 @@ class AdminDashboardHandler {
         
         pendingUsers.forEach(user => {
             user.status = 'active';
+            user.verified = true;
+            user.verifiedAt = new Date().toISOString();
         });
         
         this.showMessage(`${pendingUsers.length} user(s) verified successfully!`, 'success');
         this.renderUsers();
         this.updateDashboardStats();
+        this.loadRecentActivity();
+        this.loadSystemAlerts();
     }
 
     approvePendingListings() {
@@ -1202,11 +1269,14 @@ class AdminDashboardHandler {
         
         pendingListings.forEach(listing => {
             listing.status = 'active';
+            listing.approvedAt = new Date().toISOString();
         });
         
         this.showMessage(`${pendingListings.length} listing(s) approved successfully!`, 'success');
         this.renderListings();
         this.updateDashboardStats();
+        this.loadRecentActivity();
+        this.loadSystemAlerts();
     }
 
     generateReport() {
@@ -1452,12 +1522,12 @@ class AdminDashboardHandler {
         const activityFeed = document.getElementById('activityFeed');
         if (!activityFeed) return;
 
-        const activities = [
-            { icon: '👤', title: 'New User Registered', description: 'A new buyer account was created', time: '2 hours ago' },
-            { icon: '📋', title: 'Listing Created', description: 'New asset listing added to platform', time: '4 hours ago' },
-            { icon: '✅', title: 'Listing Approved', description: 'Pending listing was approved', time: '6 hours ago' },
-            { icon: '💰', title: 'Transaction Completed', description: 'Payment processed successfully', time: '1 day ago' }
-        ];
+        const activities = this.generateActivityFeed();
+        
+        if (activities.length === 0) {
+            activityFeed.innerHTML = '<div class="empty-state"><p>No recent activity to display</p></div>';
+            return;
+        }
 
         activityFeed.innerHTML = activities.map(activity => `
             <div class="activity-item">
@@ -1471,15 +1541,133 @@ class AdminDashboardHandler {
         `).join('');
     }
 
+    generateActivityFeed() {
+        const activities = [];
+        const now = new Date();
+
+        // Get recent users (last 7 days)
+        const recentUsers = this.users
+            .filter(user => {
+                if (!user.createdAt && !user.joinDate) return false;
+                const userDate = user.createdAt ? new Date(user.createdAt) : new Date(user.joinDate);
+                const daysDiff = (now - userDate) / (1000 * 60 * 60 * 24);
+                return daysDiff <= 7;
+            })
+            .sort((a, b) => {
+                const dateA = a.createdAt ? new Date(a.createdAt) : new Date(a.joinDate || 0);
+                const dateB = b.createdAt ? new Date(b.createdAt) : new Date(b.joinDate || 0);
+                return dateB - dateA;
+            })
+            .slice(0, 3);
+
+        recentUsers.forEach(user => {
+            const userDate = user.createdAt ? new Date(user.createdAt) : new Date(user.joinDate);
+            const userType = user.userType || 'buyer';
+            const typeLabel = userType.charAt(0).toUpperCase() + userType.slice(1);
+            activities.push({
+                icon: '👤',
+                title: 'New User Registered',
+                description: `A new ${typeLabel} account was created${user.email ? ` (${user.email})` : ''}`,
+                time: this.getTimeAgo(userDate),
+                timestamp: userDate
+            });
+        });
+
+        // Get recent listings (last 7 days)
+        const recentListings = this.listings
+            .filter(listing => {
+                if (!listing.createdAt && !listing.startDate) return false;
+                const listingDate = listing.createdAt ? new Date(listing.createdAt) : new Date(listing.startDate);
+                const daysDiff = (now - listingDate) / (1000 * 60 * 60 * 24);
+                return daysDiff <= 7;
+            })
+            .sort((a, b) => {
+                const dateA = a.createdAt ? new Date(a.createdAt) : new Date(a.startDate || 0);
+                const dateB = b.createdAt ? new Date(b.createdAt) : new Date(b.startDate || 0);
+                return dateB - dateA;
+            })
+            .slice(0, 3);
+
+        recentListings.forEach(listing => {
+            const listingDate = listing.createdAt ? new Date(listing.createdAt) : new Date(listing.startDate);
+            if (listing.status === 'pending') {
+                activities.push({
+                    icon: '📋',
+                    title: 'Listing Created',
+                    description: `New asset listing added: ${listing.title}`,
+                    time: this.getTimeAgo(listingDate),
+                    timestamp: listingDate
+                });
+            } else if (listing.status === 'active') {
+                activities.push({
+                    icon: '✅',
+                    title: 'Listing Approved',
+                    description: `Listing approved and activated: ${listing.title}`,
+                    time: this.getTimeAgo(listingDate),
+                    timestamp: listingDate
+                });
+            }
+        });
+
+        // Get recent transactions (last 7 days)
+        const recentTransactions = this.transactions
+            .filter(transaction => {
+                if (!transaction.createdAt && !transaction.date) return false;
+                const transDate = transaction.createdAt ? new Date(transaction.createdAt) : new Date(transaction.date);
+                const daysDiff = (now - transDate) / (1000 * 60 * 60 * 24);
+                return daysDiff <= 7 && transaction.status === 'completed';
+            })
+            .sort((a, b) => {
+                const dateA = a.createdAt ? new Date(a.createdAt) : new Date(a.date || 0);
+                const dateB = b.createdAt ? new Date(b.createdAt) : new Date(b.date || 0);
+                return dateB - dateA;
+            })
+            .slice(0, 2);
+
+        recentTransactions.forEach(transaction => {
+            const transDate = transaction.createdAt ? new Date(transaction.createdAt) : new Date(transaction.date);
+            activities.push({
+                icon: '💰',
+                title: 'Transaction Completed',
+                description: `Payment processed: BWP ${(transaction.amount || 0).toLocaleString()}`,
+                time: this.getTimeAgo(transDate),
+                timestamp: transDate
+            });
+        });
+
+        // Sort all activities by timestamp (most recent first) and limit to 10
+        return activities
+            .sort((a, b) => (b.timestamp || new Date(0)) - (a.timestamp || new Date(0)))
+            .slice(0, 10);
+    }
+
+    getTimeAgo(date) {
+        if (!date) return 'Unknown';
+        
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / (1000 * 60));
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+        if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+        if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+        
+        return date.toLocaleDateString();
+    }
+
     loadSystemAlerts() {
         const alertsList = document.getElementById('alertsList');
         if (!alertsList) return;
 
-        const alerts = [
-            { icon: '⚠️', type: 'warning', title: 'Pending Approvals', description: `${this.listings.filter(l => l.status === 'pending').length} listings awaiting approval` },
-            { icon: '📊', type: 'info', title: 'System Health', description: 'All systems operational' },
-            { icon: '👥', type: 'info', title: 'User Activity', description: `${this.users.filter(u => u.status === 'pending').length} users pending verification` }
-        ];
+        const alerts = this.generateSystemAlerts();
+
+        if (alerts.length === 0) {
+            alertsList.innerHTML = '<div class="empty-state"><p>No alerts at this time</p></div>';
+            return;
+        }
 
         alertsList.innerHTML = alerts.map(alert => `
             <div class="alert-item ${alert.type}">
@@ -1490,6 +1678,119 @@ class AdminDashboardHandler {
                 </div>
             </div>
         `).join('');
+    }
+
+    generateSystemAlerts() {
+        const alerts = [];
+        
+        // Pending Approvals Alert
+        const pendingListings = this.listings.filter(l => l.status === 'pending').length;
+        if (pendingListings > 0) {
+            alerts.push({
+                icon: '⚠️',
+                type: 'warning',
+                title: 'Pending Approvals',
+                description: `${pendingListings} listing${pendingListings > 1 ? 's' : ''} awaiting approval`,
+                priority: 1
+            });
+        } else {
+            alerts.push({
+                icon: '✅',
+                type: 'success',
+                title: 'Pending Approvals',
+                description: '0 listings awaiting approval',
+                priority: 3
+            });
+        }
+
+        // System Health Alert
+        const platformHealth = this.calculatePlatformHealth();
+        if (platformHealth >= 90) {
+            alerts.push({
+                icon: '📊',
+                type: 'info',
+                title: 'System Health',
+                description: `All systems operational (${platformHealth}% health)`,
+                priority: 3
+            });
+        } else if (platformHealth >= 70) {
+            alerts.push({
+                icon: '⚠️',
+                type: 'warning',
+                title: 'System Health',
+                description: `System health at ${platformHealth}% - review recommended`,
+                priority: 2
+            });
+        } else {
+            alerts.push({
+                icon: '🔴',
+                type: 'error',
+                title: 'System Health',
+                description: `Critical: System health at ${platformHealth}% - immediate attention required`,
+                priority: 1
+            });
+        }
+
+        // User Activity Alert
+        const pendingUsers = this.users.filter(u => u.status === 'pending' || !u.verified).length;
+        if (pendingUsers > 0) {
+            alerts.push({
+                icon: '👥',
+                type: 'warning',
+                title: 'User Activity',
+                description: `${pendingUsers} user${pendingUsers > 1 ? 's' : ''} pending verification`,
+                priority: 2
+            });
+        } else {
+            alerts.push({
+                icon: '👥',
+                type: 'info',
+                title: 'User Activity',
+                description: '0 users pending verification',
+                priority: 3
+            });
+        }
+
+        // Low Activity Alert
+        const activeListings = this.listings.filter(l => l.status === 'active').length;
+        if (activeListings === 0 && this.listings.length > 0) {
+            alerts.push({
+                icon: '📉',
+                type: 'warning',
+                title: 'Low Activity',
+                description: 'No active listings on platform',
+                priority: 2
+            });
+        }
+
+        // Revenue Alert (if significant)
+        const totalRevenue = this.transactions
+            .filter(t => t.status === 'completed')
+            .reduce((sum, t) => sum + (t.amount || 0), 0);
+        
+        if (totalRevenue > 0) {
+            const recentRevenue = this.transactions
+                .filter(t => {
+                    if (!t.createdAt && !t.date) return false;
+                    const transDate = t.createdAt ? new Date(t.createdAt) : new Date(t.date);
+                    const daysDiff = (new Date() - transDate) / (1000 * 60 * 60 * 24);
+                    return daysDiff <= 7 && t.status === 'completed';
+                })
+                .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+            if (recentRevenue > 0) {
+                alerts.push({
+                    icon: '💰',
+                    type: 'success',
+                    title: 'Recent Revenue',
+                    description: `BWP ${recentRevenue.toLocaleString()} in last 7 days`,
+                    priority: 3
+                });
+            }
+        }
+
+        // Sort by priority (1 = highest, 3 = lowest) and return
+        return alerts.sort((a, b) => a.priority - b.priority);
     }
 
     async handleLogout() {
