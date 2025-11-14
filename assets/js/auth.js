@@ -368,15 +368,19 @@ class AuthManager {
         
         // For non-admin users, check Google Sheets if service is available
         if (typeof googleSheetsService !== 'undefined' && userEmail) {
+            console.log('🔐 Starting Google Sheets verification for:', userEmail);
+            console.log('Google Sheets Service available:', typeof googleSheetsService !== 'undefined');
             try {
                 const sheetUser = await googleSheetsService.checkUserExists(userEmail);
+                console.log('📋 Google Sheets check result:', sheetUser);
                 if (sheetUser) {
                     // User found in Google Sheets, use their type from sheet
                     userType = sheetUser.userType || userType;
-                    console.log('✓ User found in Google Sheets with type:', userType);
+                    console.log('✅ User verified in Google Sheets with type:', userType);
                 } else {
                     // User not in Google Sheets - deny access
-                    console.warn('User not found in Google Sheets');
+                    console.error('❌ User NOT found in Google Sheets:', userEmail);
+                    console.error('This means the user email is not in either the Buyers or Sheriffs tab');
                     this.showMessage('Your account is not registered. Please contact the administrator.', 'error');
                     // Sign out the user
                     if (this.auth && this.auth.signOut) {
@@ -386,10 +390,15 @@ class AuthManager {
                     return;
                 }
             } catch (error) {
-                console.error('Error checking Google Sheets:', error);
+                console.error('❌ Error checking Google Sheets:', error);
+                console.error('Error stack:', error.stack);
                 // If sheet check fails, allow login but log warning
-                console.warn('Could not verify user in Google Sheets, allowing login');
+                console.warn('⚠️ Could not verify user in Google Sheets, allowing login as fallback');
             }
+        } else {
+            console.warn('⚠️ Google Sheets service not available or no email provided');
+            console.log('googleSheetsService available:', typeof googleSheetsService !== 'undefined');
+            console.log('userEmail:', userEmail);
         }
         
         // Map user type to dashboard URL

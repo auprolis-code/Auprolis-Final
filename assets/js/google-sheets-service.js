@@ -142,7 +142,14 @@ class GoogleSheetsService {
             }
 
             const csvText = await response.text();
+            console.log(`📥 CSV data received for ${tabName} tab (${csvText.length} characters)`);
+            console.log('CSV preview (first 500 chars):', csvText.substring(0, 500));
+            
             const users = this.parseCSV(csvText);
+            console.log(`✓ Parsed ${users.length} users from ${tabName} tab`);
+            if (users.length > 0) {
+                console.log(`Sample user from ${tabName}:`, users[0]);
+            }
             
             // Cache the data
             this.cachedData[tabName] = users;
@@ -180,12 +187,16 @@ class GoogleSheetsService {
 
             // Only add if email exists
             if (user.email || user['email address']) {
-                users.push({
+                const parsedUser = {
                     firstName: user['first name'] || user.firstname || '',
                     lastName: user['last name'] || user.lastname || '',
-                    email: (user.email || user['email address'] || '').toLowerCase(),
+                    email: (user.email || user['email address'] || '').toLowerCase().trim(),
                     phone: user.phone || user['phone number'] || ''
-                });
+                };
+                users.push(parsedUser);
+                console.log(`  ✓ Parsed user: ${parsedUser.email} (${parsedUser.firstName} ${parsedUser.lastName})`);
+            } else {
+                console.warn(`  ⚠ Skipping row ${i + 1}: No email found. Headers:`, headers, 'Values:', values);
             }
         }
 
@@ -224,24 +235,43 @@ class GoogleSheetsService {
     async checkUserExists(email) {
         try {
             const emailLower = email.toLowerCase();
+            console.log('🔍 Checking Google Sheets for user:', emailLower);
             
             // Check buyers tab
+            console.log('📊 Reading Buyers tab...');
             const buyers = await this.readSheetData('buyers');
+            console.log(`✓ Found ${buyers.length} users in Buyers tab`);
+            if (buyers.length > 0) {
+                console.log('Buyers tab users:', buyers.map(u => u.email));
+            }
+            
             const buyerUser = buyers.find(user => user.email === emailLower);
             if (buyerUser) {
+                console.log('✅ User found in Buyers tab:', buyerUser);
                 return { ...buyerUser, userType: 'buyer' };
             }
             
             // Check sheriffs tab
+            console.log('📊 Reading Sheriffs tab...');
             const sheriffs = await this.readSheetData('sheriffs');
+            console.log(`✓ Found ${sheriffs.length} users in Sheriffs tab`);
+            if (sheriffs.length > 0) {
+                console.log('Sheriffs tab users:', sheriffs.map(u => u.email));
+            }
+            
             const sheriffUser = sheriffs.find(user => user.email === emailLower);
             if (sheriffUser) {
+                console.log('✅ User found in Sheriffs tab:', sheriffUser);
                 return { ...sheriffUser, userType: 'sheriff' };
             }
             
+            console.warn('❌ User not found in either tab. Searched for:', emailLower);
+            console.log('Available emails in Buyers:', buyers.map(u => u.email));
+            console.log('Available emails in Sheriffs:', sheriffs.map(u => u.email));
             return null;
         } catch (error) {
-            console.error('Error checking user in Google Sheets:', error);
+            console.error('❌ Error checking user in Google Sheets:', error);
+            console.error('Error details:', error.message, error.stack);
             return null;
         }
     }
