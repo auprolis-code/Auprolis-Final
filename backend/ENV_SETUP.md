@@ -27,3 +27,7 @@ CORS_ORIGIN=http://localhost:5500,http://127.0.0.1:5500
 3. Generate a strong random string for `JWT_SECRET` (you can use: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`)
 4. Update `CORS_ORIGIN` with your frontend URL(s)
 
+
+
+
+

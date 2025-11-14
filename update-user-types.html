@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update User Types</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .user-update {
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Update User Types</h1>
+        
+        <div class="user-update">
+            <strong>thegreatmayabane@gmail.com</strong> → <strong>buyer</strong>
+        </div>
+        <div class="user-update">
+            <strong>auprolis@gmail.com</strong> → <strong>admin</strong>
+        </div>
+        <div class="user-update">
+            <strong>aivanguardd@gmail.com</strong> → <strong>sheriff</strong>
+        </div>
+
+        <div id="status"></div>
+        
+        <div id="authSection" style="margin: 20px 0; padding: 15px; background: #fff3cd; border-radius: 4px; border: 1px solid #ffc107;">
+            <h3 style="margin-top: 0;">Authentication Required</h3>
+            <p>You need to be logged in to update users. Log in with any account:</p>
+            <input type="email" id="loginEmail" placeholder="Email" style="padding: 8px; margin: 5px; width: 200px;">
+            <input type="password" id="loginPassword" placeholder="Password" style="padding: 8px; margin: 5px; width: 200px;">
+            <button onclick="quickLogin()">Quick Login</button>
+            <p style="font-size: 12px; margin-top: 10px;">Or log in through your app first, then refresh this page.</p>
+        </div>
+        
+        <button id="updateBtn" onclick="updateUserTypes()" disabled>Update User Types</button>
+        <button onclick="checkUsers()">Check Current User Types</button>
+        <button onclick="checkAuth()">Check Authentication Status</button>
+        
+        <div id="log" class="log"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+    
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA9VPtRDIz4m903N4r4SDzIXPfU4LScCUQ",
+            authDomain: "auprolis-mvp2.firebaseapp.com",
+            projectId: "auprolis-mvp2",
+            storageBucket: "auprolis-mvp2.firebasestorage.app",
+            messagingSenderId: "954767989673",
+            appId: "1:954767989673:web:c22f4ebb2227c9cf0d42b8",
+            measurementId: "G-VQY6T0Q7Y0",
+            databaseURL: "https://auprolis-mvp2-default-rtdb.firebaseio.com"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const realtimeDb = firebase.database();
+
+        const log = (message, type = 'info') => {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#721c24' : type === 'success' ? '#155724' : '#0c5460';
+            logDiv.innerHTML += `<div style="color: ${color}; margin: 5px 0;">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        };
+
+        const showStatus = (message, type = 'info') => {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        };
+
+        // Check authentication status
+        function checkAuth() {
+            const user = auth.currentUser;
+            if (user) {
+                log(`✓ Authenticated as: ${user.email} (${user.uid})`, 'success');
+                showStatus(`✓ Logged in as: ${user.email}`, 'success');
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('updateBtn').disabled = false;
+                return true;
+            } else {
+                log('✗ Not authenticated. Please log in first.', 'error');
+                showStatus('✗ Not authenticated. Please log in.', 'error');
+                document.getElementById('authSection').style.display = 'block';
+                document.getElementById('updateBtn').disabled = true;
+                return false;
+            }
+        }
+
+        // Quick login function
+        async function quickLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!email || !password) {
+                showStatus('Please enter email and password', 'error');
+                return;
+            }
+
+            try {
+                showStatus('Logging in...', 'info');
+                log(`Attempting to log in as ${email}...`, 'info');
+                
+                await auth.signInWithEmailAndPassword(email, password);
+                log('✓ Login successful!', 'success');
+                checkAuth();
+            } catch (error) {
+                log(`✗ Login failed: ${error.message}`, 'error');
+                showStatus(`Login failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Monitor auth state
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                log(`✓ Authentication detected: ${user.email}`, 'success');
+                checkAuth();
+            } else {
+                log('⚠ No user authenticated', 'error');
+                checkAuth();
+            }
+        });
+
+        // User updates to perform
+        const userUpdates = [
+            { email: 'thegreatmayabane@gmail.com', userType: 'buyer' },
+            { email: 'auprolis@gmail.com', userType: 'admin' },
+            { email: 'aivanguardd@gmail.com', userType: 'sheriff' }
+        ];
+
+        async function findUserByEmail(email) {
+            try {
+                log(`Searching for user: ${email}...`, 'info');
+                
+                // Try Firestore first with timeout
+                try {
+                    const firestoreQuery = await Promise.race([
+                        db.collection('users')
+                            .where('email', '==', email.toLowerCase())
+                            .limit(1)
+                            .get(),
+                        new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Firestore query timeout')), 10000)
+                        )
+                    ]);
+
+                    if (!firestoreQuery.empty) {
+                        const doc = firestoreQuery.docs[0];
+                        log(`✓ Found in Firestore: ${doc.id}`, 'success');
+                        return {
+                            uid: doc.id,
+                            data: doc.data(),
+                            source: 'firestore'
+                        };
+                    }
+                } catch (firestoreError) {
+                    log(`Firestore search failed: ${firestoreError.message}`, 'error');
+                }
+
+                // Try Realtime Database with timeout
+                try {
+                    const realtimeSnapshot = await Promise.race([
+                        realtimeDb.ref('users')
+                            .orderByChild('email')
+                            .equalTo(email.toLowerCase())
+                            .once('value'),
+                        new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Realtime DB query timeout')), 10000)
+                        )
+                    ]);
+
+                    if (realtimeSnapshot.exists()) {
+                        const users = realtimeSnapshot.val();
+                        const userId = Object.keys(users)[0];
+                        log(`✓ Found in Realtime DB: ${userId}`, 'success');
+                        return {
+                            uid: userId,
+                            data: users[userId],
+                            source: 'realtime'
+                        };
+                    }
+                } catch (realtimeError) {
+                    log(`Realtime DB search failed: ${realtimeError.message}`, 'error');
+                }
+
+                log(`✗ User not found: ${email}`, 'error');
+                return null;
+            } catch (error) {
+                log(`Error finding user ${email}: ${error.message}`, 'error');
+                return null;
+            }
+        }
+
+        async function updateUserInFirestore(uid, userType) {
+            try {
+                // Try update first, if it fails due to permissions, try set with merge
+                try {
+                    await Promise.race([
+                        db.collection('users').doc(uid).update({
+                            userType: userType,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }),
+                        new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Update timeout')), 10000)
+                        )
+                    ]);
+                    log(`✓ Updated user ${uid} to ${userType} in Firestore`, 'success');
+                    return true;
+                } catch (updateError) {
+                    // If update fails, try set with merge (bypasses some permission issues)
+                    if (updateError.code === 'permission-denied' || updateError.message.includes('permission')) {
+                        log(`⚠ Update failed, trying set with merge...`, 'info');
+                        try {
+                            const userDoc = await db.collection('users').doc(uid).get();
+                            if (userDoc.exists) {
+                                await db.collection('users').doc(uid).set({
+                                    ...userDoc.data(),
+                                    userType: userType,
+                                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                                }, { merge: true });
+                                log(`✓ Set user ${uid} to ${userType} in Firestore (using merge)`, 'success');
+                                return true;
+                            }
+                        } catch (setError) {
+                            log(`✗ Set also failed: ${setError.message}`, 'error');
+                            throw setError;
+                        }
+                    }
+                    throw updateError;
+                }
+            } catch (error) {
+                log(`✗ Error updating Firestore: ${error.message} (Code: ${error.code || 'unknown'})`, 'error');
+                return false;
+            }
+        }
+
+        async function updateUserInRealtimeDb(uid, userType) {
+            try {
+                await Promise.race([
+                    realtimeDb.ref(`users/${uid}`).update({
+                        userType: userType,
+                        updatedAt: firebase.database.ServerValue.TIMESTAMP
+                    }),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Update timeout')), 10000)
+                    )
+                ]);
+                log(`✓ Updated user ${uid} to ${userType} in Realtime Database`, 'success');
+                return true;
+            } catch (error) {
+                log(`✗ Error updating Realtime Database: ${error.message} (Code: ${error.code || 'unknown'})`, 'error');
+                // If update fails, try set
+                try {
+                    log(`⚠ Trying set instead of update...`, 'info');
+                    const userData = await realtimeDb.ref(`users/${uid}`).once('value');
+                    if (userData.exists()) {
+                        await realtimeDb.ref(`users/${uid}`).set({
+                            ...userData.val(),
+                            userType: userType,
+                            updatedAt: firebase.database.ServerValue.TIMESTAMP
+                        });
+                        log(`✓ Set user ${uid} to ${userType} in Realtime Database`, 'success');
+                        return true;
+                    }
+                } catch (setError) {
+                    log(`✗ Set also failed: ${setError.message}`, 'error');
+                }
+                return false;
+            }
+        }
+
+        async function updateUserTypes() {
+            // Check authentication first
+            if (!auth.currentUser) {
+                showStatus('✗ Please log in first!', 'error');
+                log('✗ Authentication required. Please log in.', 'error');
+                checkAuth();
+                return;
+            }
+
+            const btn = document.getElementById('updateBtn');
+            btn.disabled = true;
+            btn.textContent = 'Updating...';
+            
+            // Clear log
+            document.getElementById('log').innerHTML = '';
+            
+            log('=== Starting User Type Updates ===', 'info');
+            log(`Authenticated as: ${auth.currentUser.email}`, 'info');
+            showStatus('Updating user types...', 'info');
+
+            let successCount = 0;
+            let failCount = 0;
+
+            try {
+                for (let i = 0; i < userUpdates.length; i++) {
+                    const update = userUpdates[i];
+                    log(`\n[${i + 1}/${userUpdates.length}] Processing: ${update.email} → ${update.userType}`, 'info');
+                    
+                    const user = await findUserByEmail(update.email);
+                    
+                    if (!user) {
+                        log(`✗ User not found: ${update.email}`, 'error');
+                        failCount++;
+                        continue;
+                    }
+
+                    log(`Found user: ${user.uid}`, 'info');
+                    log(`Current userType: ${user.data.userType || 'not set'}`, 'info');
+
+                    // Update in Firestore
+                    log(`Updating Firestore...`, 'info');
+                    const firestoreSuccess = await updateUserInFirestore(user.uid, update.userType);
+                    
+                    // Update in Realtime Database
+                    log(`Updating Realtime Database...`, 'info');
+                    const realtimeSuccess = await updateUserInRealtimeDb(user.uid, update.userType);
+
+                    if (firestoreSuccess || realtimeSuccess) {
+                        log(`✓ Successfully updated ${update.email} to ${update.userType}`, 'success');
+                        successCount++;
+                    } else {
+                        log(`✗ Failed to update ${update.email} in both databases`, 'error');
+                        failCount++;
+                    }
+                }
+            } catch (error) {
+                log(`✗ Fatal error during update: ${error.message}`, 'error');
+                showStatus(`✗ Update failed: ${error.message}`, 'error');
+            }
+
+            log(`\n=== Update Complete ===`, 'info');
+            log(`Success: ${successCount}`, successCount > 0 ? 'success' : 'info');
+            log(`Failed: ${failCount}`, failCount > 0 ? 'error' : 'info');
+
+            if (failCount === 0 && successCount > 0) {
+                showStatus(`✓ All ${successCount} users updated successfully!`, 'success');
+            } else if (successCount > 0) {
+                showStatus(`⚠ Updated ${successCount} users, ${failCount} failed. Check log for details.`, 'error');
+            } else {
+                showStatus(`✗ All updates failed. Check log for details.`, 'error');
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Update User Types';
+        }
+
+        async function checkUsers() {
+            log('\n=== Checking Current User Types ===', 'info');
+            
+            for (const update of userUpdates) {
+                const user = await findUserByEmail(update.email);
+                
+                if (user) {
+                    log(`${update.email}: ${user.data.userType || 'not set'} (UID: ${user.uid})`, 'info');
+                } else {
+                    log(`${update.email}: User not found`, 'error');
+                }
+            }
+        }
+
+        // Auto-check on load
+        window.addEventListener('load', () => {
+            log('Page loaded. Checking authentication...', 'info');
+            setTimeout(() => {
+                checkAuth();
+                if (auth.currentUser) {
+                    log('✓ Ready to update user types.', 'success');
+                } else {
+                    log('⚠ Please log in to update user types.', 'error');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
+

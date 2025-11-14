@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify User Types</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .user-result {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .user-result.success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        .user-result.error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .user-result.warning {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .user-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .expected {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .actual {
+            font-weight: bold;
+        }
+        .actual.correct {
+            color: #28a745;
+        }
+        .actual.incorrect {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Verify User Types</h1>
+        
+        <div id="status"></div>
+        
+        <button id="checkBtn" onclick="checkAllUsers()">Check User Types & List All Users</button>
+        <button onclick="location.reload()">Refresh</button>
+        <p style="font-size: 12px; color: #666; margin-top: 10px;">
+            Click the button above to see all users in the console and download a JSON file.
+        </p>
+        
+        <div id="results"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+    
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA9VPtRDIz4m903N4r4SDzIXPfU4LScCUQ",
+            authDomain: "auprolis-mvp2.firebaseapp.com",
+            projectId: "auprolis-mvp2",
+            storageBucket: "auprolis-mvp2.firebasestorage.app",
+            messagingSenderId: "954767989673",
+            appId: "1:954767989673:web:c22f4ebb2227c9cf0d42b8",
+            measurementId: "G-VQY6T0Q7Y0",
+            databaseURL: "https://auprolis-mvp2-default-rtdb.firebaseio.com"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const realtimeDb = firebase.database();
+
+        // Expected user types
+        const expectedUserTypes = {
+            'thegreatmayabane@gmail.com': 'buyer',
+            'auprolis@gmail.com': 'admin',
+            'aivanguardd@gmail.com': 'sheriff'
+        };
+
+        const showStatus = (message, type = 'info') => {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        };
+
+        async function findUserByEmail(email) {
+            try {
+                // Try Firestore first
+                const firestoreQuery = await Promise.race([
+                    db.collection('users')
+                        .where('email', '==', email.toLowerCase())
+                        .limit(1)
+                        .get(),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Timeout')), 10000)
+                    )
+                ]);
+
+                if (!firestoreQuery.empty) {
+                    const doc = firestoreQuery.docs[0];
+                    return {
+                        uid: doc.id,
+                        data: doc.data(),
+                        source: 'Firestore'
+                    };
+                }
+
+                // Try Realtime Database
+                const realtimeSnapshot = await Promise.race([
+                    realtimeDb.ref('users')
+                        .orderByChild('email')
+                        .equalTo(email.toLowerCase())
+                        .once('value'),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Timeout')), 10000)
+                    )
+                ]);
+
+                if (realtimeSnapshot.exists()) {
+                    const users = realtimeSnapshot.val();
+                    const userId = Object.keys(users)[0];
+                    return {
+                        uid: userId,
+                        data: users[userId],
+                        source: 'Realtime Database'
+                    };
+                }
+
+                return null;
+            } catch (error) {
+                console.error(`Error finding user ${email}:`, error);
+                return null;
+            }
+        }
+
+        function displayUserResult(email, user, expectedType) {
+            const resultsDiv = document.getElementById('results');
+            const userDiv = document.createElement('div');
+            userDiv.className = 'user-result';
+
+            if (!user) {
+                userDiv.className += ' error';
+                userDiv.innerHTML = `
+                    <h3>${email}</h3>
+                    <p><strong>Status:</strong> <span style="color: #dc3545;">✗ User not found</span></p>
+                    <p><strong>Expected:</strong> <span class="expected">${expectedType}</span></p>
+                `;
+                resultsDiv.appendChild(userDiv);
+                return false;
+            }
+
+            const actualType = user.data.userType || 'not set';
+            const isCorrect = actualType === expectedType;
+            const isValidType = ['admin', 'buyer', 'sheriff'].includes(actualType);
+
+            if (isCorrect) {
+                userDiv.className += ' success';
+            } else if (!isValidType) {
+                userDiv.className += ' error';
+            } else {
+                userDiv.className += ' warning';
+            }
+
+            const statusIcon = isCorrect ? '✓' : '✗';
+            const statusText = isCorrect ? 'Correct' : (isValidType ? 'Incorrect' : 'Invalid Type');
+            const statusColor = isCorrect ? '#28a745' : (isValidType ? '#ffc107' : '#dc3545');
+
+            userDiv.innerHTML = `
+                <h3>${email}</h3>
+                <p><strong>Status:</strong> <span style="color: ${statusColor};">${statusIcon} ${statusText}</span></p>
+                <p><strong>Expected:</strong> <span class="expected">${expectedType}</span></p>
+                <p><strong>Actual:</strong> <span class="actual ${isCorrect ? 'correct' : 'incorrect'}">${actualType}</span></p>
+                <p><strong>Source:</strong> ${user.source}</p>
+                <p><strong>UID:</strong> ${user.uid}</p>
+                <div class="user-info">
+                    <strong>Full User Data:</strong><br>
+                    ${JSON.stringify(user.data, null, 2)}
+                </div>
+            `;
+
+            resultsDiv.appendChild(userDiv);
+            return isCorrect;
+        }
+
+        async function getAllUsers() {
+            try {
+                const allUsers = [];
+                
+                // Get all users from Firestore
+                try {
+                    const firestoreSnapshot = await Promise.race([
+                        db.collection('users').get(),
+                        new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Timeout')), 15000)
+                        )
+                    ]);
+                    
+                    firestoreSnapshot.forEach(doc => {
+                        allUsers.push({
+                            uid: doc.id,
+                            ...doc.data(),
+                            source: 'Firestore'
+                        });
+                    });
+                } catch (error) {
+                    console.warn('Firestore query failed:', error);
+                }
+                
+                // Get all users from Realtime Database
+                try {
+                    const realtimeSnapshot = await Promise.race([
+                        realtimeDb.ref('users').once('value'),
+                        new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Timeout')), 15000)
+                        )
+                    ]);
+                    
+                    if (realtimeSnapshot.exists()) {
+                        const users = realtimeSnapshot.val();
+                        Object.keys(users).forEach(uid => {
+                            // Only add if not already in list
+                            if (!allUsers.find(u => u.uid === uid)) {
+                                allUsers.push({
+                                    uid: uid,
+                                    ...users[uid],
+                                    source: 'Realtime Database'
+                                });
+                            }
+                        });
+                    }
+                } catch (error) {
+                    console.warn('Realtime DB query failed:', error);
+                }
+                
+                return allUsers;
+            } catch (error) {
+                console.error('Error getting all users:', error);
+                return [];
+            }
+        }
+
+        async function checkAllUsers() {
+            const btn = document.getElementById('checkBtn');
+            btn.disabled = true;
+            btn.textContent = 'Checking...';
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            showStatus('Checking user types...', 'info');
+
+            // First, get ALL users and display them
+            console.log('\n=== ALL USERS IN FIRESTORE ===\n');
+            const allUsers = await getAllUsers();
+            
+            if (allUsers.length > 0) {
+                console.log(`Total users found: ${allUsers.length}\n`);
+                console.log('UID'.padEnd(30) + 'Email'.padEnd(35) + 'Name'.padEnd(25) + 'Type'.padEnd(10) + 'Status');
+                console.log('─'.repeat(100));
+                
+                allUsers.sort((a, b) => (a.email || '').localeCompare(b.email || ''));
+                
+                allUsers.forEach(user => {
+                    const uid = (user.uid || 'N/A').substring(0, 28);
+                    const email = (user.email || 'N/A').substring(0, 33);
+                    const name = (user.fullName || 'N/A').substring(0, 23);
+                    const type = (user.userType || 'not set').padEnd(8);
+                    const status = user.status || 'N/A';
+                    console.log(`${uid.padEnd(30)}${email.padEnd(35)}${name.padEnd(25)}${type}${status}`);
+                });
+                
+                console.log('\n─'.repeat(100));
+                console.log('\nFull JSON data:');
+                console.log(JSON.stringify(allUsers, null, 2));
+                
+                // Also create downloadable JSON
+                const jsonStr = JSON.stringify(allUsers, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'firestore-users.json';
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                console.log('\n✓ JSON file downloaded: firestore-users.json');
+            } else {
+                console.log('No users found in database.');
+            }
+
+            let correctCount = 0;
+            let totalCount = Object.keys(expectedUserTypes).length;
+
+            for (const [email, expectedType] of Object.entries(expectedUserTypes)) {
+                console.log(`\nChecking ${email}...`);
+                const user = await findUserByEmail(email);
+                const isCorrect = displayUserResult(email, user, expectedType);
+                if (isCorrect) correctCount++;
+            }
+
+            // Summary
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = 'user-result';
+            if (correctCount === totalCount) {
+                summaryDiv.className += ' success';
+                summaryDiv.innerHTML = `
+                    <h2>✓ Verification Complete</h2>
+                    <p><strong>All ${totalCount} users have the correct user types!</strong></p>
+                    <p>✓ thegreatmayabane@gmail.com → buyer</p>
+                    <p>✓ auprolis@gmail.com → admin</p>
+                    <p>✓ aivanguardd@gmail.com → sheriff</p>
+                `;
+                showStatus(`✓ All ${totalCount} users verified successfully!`, 'success');
+            } else {
+                summaryDiv.className += ' warning';
+                summaryDiv.innerHTML = `
+                    <h2>⚠ Verification Results</h2>
+                    <p><strong>${correctCount} out of ${totalCount} users have the correct user types.</strong></p>
+                    <p>Please check the details above for any incorrect or missing user types.</p>
+                `;
+                showStatus(`⚠ ${correctCount}/${totalCount} users correct. Check details above.`, 'error');
+            }
+            resultsDiv.insertBefore(summaryDiv, resultsDiv.firstChild);
+
+            btn.disabled = false;
+            btn.textContent = 'Check User Types';
+        }
+
+        // Auto-check on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                checkAllUsers();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
+
