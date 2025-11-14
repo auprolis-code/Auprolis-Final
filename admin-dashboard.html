@@ -174,13 +174,16 @@
                         <h2>User Management</h2>
                         <div class="users-actions">
                             <button class="btn btn-primary" onclick="adminHandler.openUserModal()">Add User</button>
+                            <button class="btn btn-secondary" onclick="adminHandler.openGoogleSheets()" title="Open Google Sheets to view/manage users">
+                                📊 View Google Sheets
+                            </button>
                             <select id="userStatusFilter" class="filter-select">
                                 <option value="">All Users</option>
                                 <option value="active">Active</option>
                                 <option value="pending">Pending Verification</option>
                                 <option value="suspended">Suspended</option>
                                 <option value="buyers">Buyers</option>
-                                <option value="sellers">Sellers</option>
+                                <option value="sheriffs">Sheriffs</option>
                             </select>
                             <input type="text" id="userSearch" placeholder="Search users..." class="search-input">
                         </div>
@@ -467,29 +470,19 @@
                     </div>
 
                     <div class="form-section">
-                        <h4>Account Settings</h4>
+                        <h4>Add to Sheet</h4>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="userType">User Type *</label>
-                                <select id="userType" name="userType" required>
-                                    <option value="">Select User Type</option>
-                                    <option value="buyer">Buyer</option>
-                                    <option value="seller">Seller</option>
-                                    <option value="admin">Admin</option>
+                                <label for="sheetTab">Add to Tab *</label>
+                                <select id="sheetTab" name="sheetTab" required>
+                                    <option value="">Select Tab</option>
+                                    <option value="buyers">Buyers Tab</option>
+                                    <option value="sheriffs">Sheriffs Tab</option>
                                 </select>
+                                <small style="color: #64748b; font-size: 0.875rem; margin-top: 0.25rem; display: block;">
+                                    Select which tab in Google Sheets to add this user to
+                                </small>
                             </div>
-                            <div class="form-group">
-                                <label for="userStatus">Account Status *</label>
-                                <select id="userStatus" name="status" required>
-                                    <option value="active">Active</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="suspended">Suspended</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="userPassword">Password *</label>
-                            <input type="password" id="userPassword" name="password" required>
                         </div>
                     </div>
 
@@ -711,6 +704,7 @@
     <script src="assets/js/demo-data.js"></script>
     <script src="assets/js/demo-mode.js"></script>
     <script src="assets/js/firebase-config.js"></script>
+    <script src="assets/js/google-sheets-service.js"></script>
     <script src="assets/js/admin-dashboard.js"></script>
     <script src="assets/js/script.js"></script>
 </body>

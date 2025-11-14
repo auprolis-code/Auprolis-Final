@@ -156,8 +156,12 @@ class AdminDashboardHandler {
                 this.userData = this.user;
                 console.log('Using user data from auth object:', this.user.email);
                 
-                // Check admin role if userType is available
-                if (this.userData.userType && this.userData.userType !== 'admin') {
+                // Check if user is admin (auprolis@gmail.com)
+                const userEmail = (this.userData.email || '').toLowerCase();
+                if (userEmail === 'auprolis@gmail.com') {
+                    this.userData.userType = 'admin';
+                    console.log('✓ Admin user confirmed');
+                } else if (this.userData.userType && this.userData.userType !== 'admin') {
                     alert('Only admins can access this dashboard.');
                     window.location.href = 'login.html';
                     return;
@@ -176,7 +180,12 @@ class AdminDashboardHandler {
                         this.userData = userDoc.data();
                         console.log('Loaded user data from Firestore:', this.userData.email);
                         
-                        if (this.userData.userType !== 'admin') {
+                        // Check if user is admin (auprolis@gmail.com)
+                        const userEmail = (this.userData.email || '').toLowerCase();
+                        if (userEmail === 'auprolis@gmail.com') {
+                            this.userData.userType = 'admin';
+                            console.log('✓ Admin user confirmed');
+                        } else if (this.userData.userType !== 'admin') {
                             alert('Only admins can access this dashboard.');
                             window.location.href = 'login.html';
                             return;
@@ -200,8 +209,12 @@ class AdminDashboardHandler {
                         this.user = parsedUser; // Update user object
                         console.log('Using user data from localStorage:', parsedUser.email);
                         
-                        // Check admin role if userType is available
-                        if (this.userData.userType && this.userData.userType !== 'admin') {
+                        // Check if user is admin (auprolis@gmail.com)
+                        const userEmail = (this.userData.email || '').toLowerCase();
+                        if (userEmail === 'auprolis@gmail.com') {
+                            this.userData.userType = 'admin';
+                            console.log('✓ Admin user confirmed');
+                        } else if (this.userData.userType && this.userData.userType !== 'admin') {
                             alert('Only admins can access this dashboard.');
                             window.location.href = 'login.html';
                             return;
@@ -298,7 +311,33 @@ class AdminDashboardHandler {
     }
 
     async loadUsers() {
-        // Load from demo data or Firebase
+        // Try to load from Google Sheets first
+        if (typeof googleSheetsService !== 'undefined') {
+            try {
+                const sheetUsers = await googleSheetsService.readSheetData();
+                if (sheetUsers && sheetUsers.length > 0) {
+                    // Convert sheet users to local format
+                    this.users = sheetUsers.map((user, index) => ({
+                        id: `user-${index}`,
+                        uid: `user-${index}`,
+                        email: user.email,
+                        displayName: `${user.firstName} ${user.lastName}`.trim(),
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        userType: user.userType || 'buyer', // userType is added by readSheetData when combining tabs
+                        status: 'active', // Default status
+                        phone: user.phone || '',
+                        createdAt: new Date() // Default creation date
+                    }));
+                    console.log(`Loaded ${this.users.length} users from Google Sheets`);
+                    return;
+                }
+            } catch (error) {
+                console.warn('Could not load users from Google Sheets, falling back to local data:', error);
+            }
+        }
+        
+        // Fallback to demo data or Firebase
         if (typeof DEMO_USERS !== 'undefined') {
             this.users = DEMO_USERS;
         } else if (this.db && this.db.collection) {
@@ -700,28 +739,70 @@ class AdminDashboardHandler {
         const formData = new FormData(e.target);
         const userData = Object.fromEntries(formData.entries());
         
-        // Create user object
+        // Validate sheet tab (must be buyers or sheriffs)
+        const sheetTab = userData.sheetTab;
+        if (sheetTab !== 'buyers' && sheetTab !== 'sheriffs') {
+            this.showMessage('Please select a tab (Buyers or Sheriffs)', 'error');
+            return;
+        }
+        
+        // Determine userType from tab selection
+        const userType = sheetTab === 'sheriffs' ? 'sheriff' : 'buyer';
+        
+        // Create user object for Google Sheets (no status or createdAt)
         const newUser = {
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            email: userData.email.toLowerCase(),
+            phone: userData.phone || ''
+        };
+
+        // Add to local users array for display
+        const localUser = {
             id: `user-${Date.now()}`,
             uid: `user-${Date.now()}`,
-            email: userData.email,
-            displayName: `${userData.firstName} ${userData.lastName}`,
-            userType: userData.userType,
-            status: userData.status || 'active',
+            email: newUser.email,
+            displayName: `${newUser.firstName} ${newUser.lastName}`,
+            userType: userType,
+            status: 'active',
             createdAt: new Date(),
-            phone: userData.phone || '',
+            phone: newUser.phone,
             permissions: Array.from(document.querySelectorAll('input[name="permissions"]:checked')).map(cb => cb.value)
         };
 
-        // Add to users array
-        this.users.push(newUser);
+        this.users.push(localUser);
         
         // Save to demo data
         if (typeof DEMO_USERS !== 'undefined') {
-            DEMO_USERS.push(newUser);
+            DEMO_USERS.push(localUser);
         }
 
-        this.showMessage('User created successfully!', 'success');
+        // Add to Google Sheets
+        try {
+            if (typeof googleSheetsService !== 'undefined') {
+                // Copy data to clipboard for easy paste into Google Sheets
+                const copied = await googleSheetsService.copyUserDataToClipboard(newUser, sheetTab);
+                
+                if (copied) {
+                    // Open Google Sheets with the specific tab selected
+                    googleSheetsService.openSheetTab(sheetTab);
+                    this.showMessage(`User data copied to clipboard! Please paste it into the ${sheetTab} tab. The sheet has been opened in a new tab.`, 'success');
+                } else {
+                    // Show data and open sheet
+                    googleSheetsService.openSheetTab(sheetTab);
+                    this.showMessage(`Please add the user data manually to the ${sheetTab} tab. The sheet has been opened in a new tab.`, 'info');
+                }
+            } else {
+                // Fallback: just open the sheet
+                window.open('https://docs.google.com/spreadsheets/d/1lMVPGTNptVxn8NS7937FtxI9NAC5VeJKlXEPL5pTwmg/edit?usp=sharing', '_blank');
+                this.showMessage('User data prepared. Please add it manually to the Google Sheet.', 'info');
+            }
+        } catch (error) {
+            console.error('Error adding user to Google Sheets:', error);
+            this.showMessage('User data prepared. Please add it manually to the Google Sheet.', 'info');
+            window.open('https://docs.google.com/spreadsheets/d/1lMVPGTNptVxn8NS7937FtxI9NAC5VeJKlXEPL5pTwmg/edit?usp=sharing', '_blank');
+        }
+
         this.closeUserModal();
         this.renderUsers();
         this.updateDashboardStats();
@@ -731,6 +812,14 @@ class AdminDashboardHandler {
         const user = this.users.find(u => (u.id === userId || u.uid === userId));
         if (user) {
             alert(`User Details:\n\nName: ${user.displayName}\nEmail: ${user.email}\nType: ${user.userType}\nStatus: ${user.status}\nCreated: ${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}`);
+        }
+    }
+
+    openGoogleSheets() {
+        if (typeof googleSheetsService !== 'undefined') {
+            googleSheetsService.openSheet();
+        } else {
+            window.open('https://docs.google.com/spreadsheets/d/1lMVPGTNptVxn8NS7937FtxI9NAC5VeJKlXEPL5pTwmg/edit?usp=sharing', '_blank');
         }
     }
 
@@ -753,8 +842,10 @@ class AdminDashboardHandler {
         let filtered = [...this.users];
         
         if (statusFilter && statusFilter.value) {
-            if (statusFilter.value === 'buyers' || statusFilter.value === 'sellers') {
-                filtered = filtered.filter(u => u.userType === statusFilter.value.slice(0, -1));
+            if (statusFilter.value === 'buyers') {
+                filtered = filtered.filter(u => u.userType === 'buyer');
+            } else if (statusFilter.value === 'sheriffs') {
+                filtered = filtered.filter(u => u.userType === 'sheriff');
             } else {
                 filtered = filtered.filter(u => u.status === statusFilter.value);
             }

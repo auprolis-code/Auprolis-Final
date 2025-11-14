@@ -188,8 +188,15 @@ class AuthManager {
                 }
             }
             
-            // Get userType from userData or default to 'buyer'
-            const userType = (userData && userData.userType) || (user && user.userType) || 'buyer';
+            // Check if user is admin (auprolis@gmail.com)
+            const userEmail = (finalUserData.email || email || '').toLowerCase();
+            let userType = (userData && userData.userType) || (user && user.userType) || 'buyer';
+            
+            if (userEmail === 'auprolis@gmail.com') {
+                userType = 'admin';
+                console.log('✓ Admin user detected');
+            }
+            
             console.log('✓ Login successful! Redirecting to dashboard for userType:', userType);
             
             // Show success message and redirect directly
@@ -256,8 +263,15 @@ class AuthManager {
                 }
             }
             
-            // Get userType from userData or default to 'buyer'
-            const userType = (userData && userData.userType) || (user && user.userType) || 'buyer';
+            // Check if user is admin (auprolis@gmail.com)
+            const userEmail = (finalUserData.email || user.email || '').toLowerCase();
+            let userType = (userData && userData.userType) || (user && user.userType) || 'buyer';
+            
+            if (userEmail === 'auprolis@gmail.com') {
+                userType = 'admin';
+                console.log('✓ Admin user detected');
+            }
+            
             console.log('✓ Google login successful! Redirecting to dashboard for userType:', userType);
             
             this.setLoadingState(googleBtn, false);
@@ -340,9 +354,43 @@ class AuthManager {
         }
     }
 
-    redirectToDashboard(user, userType) {
+    async redirectToDashboard(user, userType) {
         console.log('redirectToDashboard called with userType:', userType);
         console.log('User object:', user);
+        
+        // Check if user is admin (auprolis@gmail.com)
+        const userEmail = (user.email || '').toLowerCase();
+        if (userEmail === 'auprolis@gmail.com') {
+            console.log('✓ Admin user detected, redirecting to admin dashboard');
+            window.location.href = 'admin-dashboard.html';
+            return;
+        }
+        
+        // For non-admin users, check Google Sheets if service is available
+        if (typeof googleSheetsService !== 'undefined' && userEmail) {
+            try {
+                const sheetUser = await googleSheetsService.checkUserExists(userEmail);
+                if (sheetUser) {
+                    // User found in Google Sheets, use their type from sheet
+                    userType = sheetUser.userType || userType;
+                    console.log('✓ User found in Google Sheets with type:', userType);
+                } else {
+                    // User not in Google Sheets - deny access
+                    console.warn('User not found in Google Sheets');
+                    this.showMessage('Your account is not registered. Please contact the administrator.', 'error');
+                    // Sign out the user
+                    if (this.auth && this.auth.signOut) {
+                        await this.auth.signOut();
+                    }
+                    localStorage.removeItem('demo_user');
+                    return;
+                }
+            } catch (error) {
+                console.error('Error checking Google Sheets:', error);
+                // If sheet check fails, allow login but log warning
+                console.warn('Could not verify user in Google Sheets, allowing login');
+            }
+        }
         
         // Map user type to dashboard URL
         let redirectUrl = 'buyer-dashboard.html'; // default
