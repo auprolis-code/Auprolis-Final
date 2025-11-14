@@ -34,17 +34,24 @@ class AssetsListHandler {
         // Check authentication state - Firebase or localStorage
         const auth = (typeof firebase !== 'undefined' && firebase.auth) ? firebase.auth() : null;
         
+        // Initial check from localStorage (immediate)
+        const storedUser = localStorage.getItem('demo_user');
+        const userLoggedIn = localStorage.getItem('userLoggedIn') === 'true';
+        this.isLoggedIn = !!(storedUser || userLoggedIn);
+        
         if (auth && auth.onAuthStateChanged) {
+            // Set up listener for auth state changes
             auth.onAuthStateChanged((user) => {
                 this.isLoggedIn = !!user;
                 // Re-render assets to update visibility based on login status
                 this.renderAssets();
             });
-        } else {
-            // Fallback: Check localStorage for demo user
-            const storedUser = localStorage.getItem('demo_user');
-            const userLoggedIn = localStorage.getItem('userLoggedIn') === 'true';
-            this.isLoggedIn = !!(storedUser || userLoggedIn);
+            
+            // Also check current user immediately if available
+            const currentUser = auth.currentUser;
+            if (currentUser) {
+                this.isLoggedIn = true;
+            }
         }
     }
 
