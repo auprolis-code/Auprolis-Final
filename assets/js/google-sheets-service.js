@@ -7,13 +7,24 @@ class GoogleSheetsService {
         this.sheetId = '1lMVPGTNptVxn8NS7937FtxI9NAC5VeJKlXEPL5pTwmg';
         this.sheetUrl = `https://docs.google.com/spreadsheets/d/${this.sheetId}/edit?usp=sharing`;
         
+        // Published sheet ID (from the published iframe URL)
+        this.publishId = '2PACX-1vR8AZwbrIMdHniji0S-V_ycya87sIzLijqWA8VvAiq4DzqugeZPjc4FxYd7L2dENddUZiuiRr99fshK';
+        
         // CSV export URLs for different tabs (if sheet is published)
         // Note: This requires the sheet to be published to the web
-        // Format: gid is the tab ID (0 for first tab, 1 for second, etc.)
-        // You may need to adjust these gid values based on your actual sheet structure
+        // Format: gid is the tab ID from the URL when you click on each tab
+        // Buyers tab gid: 0 (verified from URL)
+        // Sheriff tab gid: 2054246567 (verified from URL)
         this.csvExportUrls = {
             buyers: `https://docs.google.com/spreadsheets/d/${this.sheetId}/gviz/tq?tqx=out:csv&gid=0`,
-            sheriffs: `https://docs.google.com/spreadsheets/d/${this.sheetId}/gviz/tq?tqx=out:csv&gid=1`
+            sheriffs: `https://docs.google.com/spreadsheets/d/${this.sheetId}/gviz/tq?tqx=out:csv&gid=2054246567`
+        };
+        
+        // Alternative: Published CSV URLs (if the above doesn't work, try these)
+        // Using the same gid values
+        this.publishedCsvUrls = {
+            buyers: `https://docs.google.com/spreadsheets/d/e/${this.publishId}/pub?output=csv&gid=0`,
+            sheriffs: `https://docs.google.com/spreadsheets/d/e/${this.publishId}/pub?output=csv&gid=2054246567`
         };
         
         // Cache for sheet data
@@ -72,8 +83,10 @@ class GoogleSheetsService {
      */
     getTabUrl(tabName) {
         // Google Sheets URL with tab parameter
-        // The tab name should match the tab name in Google Sheets
-        return `${this.sheetUrl}#gid=${tabName === 'buyers' ? '0' : '1'}`;
+        // Using the actual gid values from the sheet
+        // Buyers tab: gid=0, Sheriff tab: gid=2054246567
+        const gid = tabName === 'sheriffs' ? '2054246567' : '0';
+        return `${this.sheetUrl}#gid=${gid}`;
     }
 
     /**
@@ -104,16 +117,28 @@ class GoogleSheetsService {
             }
 
             // Get the CSV export URL for the specific tab
-            const csvUrl = this.csvExportUrls[tabName];
+            // Try the sheet ID method first, then fallback to published URL
+            let csvUrl = this.csvExportUrls[tabName];
+            let usePublished = false;
+            
             if (!csvUrl) {
                 console.warn(`No CSV URL configured for tab: ${tabName}`);
                 return [];
             }
 
             // Try to fetch CSV data
-            const response = await fetch(csvUrl);
+            let response = await fetch(csvUrl);
+            
+            // If the first method fails, try the published URL method
+            if (!response.ok && this.publishedCsvUrls[tabName]) {
+                console.log(`Trying published URL for ${tabName} tab...`);
+                csvUrl = this.publishedCsvUrls[tabName];
+                response = await fetch(csvUrl);
+                usePublished = true;
+            }
+            
             if (!response.ok) {
-                throw new Error(`Failed to fetch sheet data for ${tabName}`);
+                throw new Error(`Failed to fetch sheet data for ${tabName} (tried both methods)`);
             }
 
             const csvText = await response.text();
@@ -269,6 +294,31 @@ class GoogleSheetsService {
     openSheetTab(tabName) {
         const tabUrl = this.getTabUrl(tabName);
         window.open(tabUrl, '_blank');
+    }
+
+    /**
+     * Get the published iframe URL for embedding
+     * @returns {string} Published iframe URL
+     */
+    getPublishedIframeUrl() {
+        return `https://docs.google.com/spreadsheets/d/e/${this.publishId}/pubhtml?widget=true&headers=false`;
+    }
+
+    /**
+     * Helper method to find the correct gid (tab ID) values
+     * To find the correct gid values:
+     * 1. Open your Google Sheet
+     * 2. Click on the tab you want (e.g., "Buyers")
+     * 3. Look at the URL - it will have #gid=XXXXX at the end
+     * 4. The XXXXX is your gid value
+     * 5. Update the csvExportUrls in the constructor with the correct gid values
+     */
+    getTabGidInstructions() {
+        return {
+            buyers: 'Open the Buyers tab and check the URL for #gid=XXXXX',
+            sheriffs: 'Open the Sheriffs tab and check the URL for #gid=XXXXX',
+            note: 'Update the gid values in csvExportUrls in the constructor'
+        };
     }
 }
 
