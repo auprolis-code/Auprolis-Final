@@ -170,8 +170,11 @@ class GoogleSheetsService {
         const lines = csvText.split('\n').filter(line => line.trim());
         if (lines.length === 0) return [];
 
-        // Assume first line is header
-        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+        // Parse header line - handle quoted values
+        const headerLine = this.parseCSVLine(lines[0]);
+        const headers = headerLine.map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
+        console.log('📋 CSV Headers detected:', headers);
+        
         const users = [];
 
         for (let i = 1; i < lines.length; i++) {
@@ -181,22 +184,69 @@ class GoogleSheetsService {
             const user = {};
             headers.forEach((header, index) => {
                 if (values[index] !== undefined) {
-                    user[header] = values[index].trim();
+                    // Remove quotes and trim
+                    const value = values[index].trim().replace(/^"|"$/g, '');
+                    user[header] = value;
                 }
             });
 
+            console.log(`  Row ${i + 1} parsed:`, user);
+
+            // Find email field - try multiple variations
+            let email = null;
+            const emailVariations = ['email', 'email address', 'e-mail', 'e mail'];
+            for (const emailKey of emailVariations) {
+                if (user[emailKey] && user[emailKey].trim()) {
+                    email = user[emailKey].trim().toLowerCase();
+                    break;
+                }
+            }
+
             // Only add if email exists
-            if (user.email || user['email address']) {
+            if (email) {
+                // Find first name - try multiple variations
+                const firstNameVariations = ['first name', 'firstname', 'first', 'fname', 'given name'];
+                let firstName = '';
+                for (const key of firstNameVariations) {
+                    if (user[key] && user[key].trim()) {
+                        firstName = user[key].trim();
+                        break;
+                    }
+                }
+
+                // Find last name - try multiple variations
+                const lastNameVariations = ['last name', 'lastname', 'last', 'lname', 'surname', 'family name'];
+                let lastName = '';
+                for (const key of lastNameVariations) {
+                    if (user[key] && user[key].trim()) {
+                        lastName = user[key].trim();
+                        break;
+                    }
+                }
+
+                // Find phone - try multiple variations
+                const phoneVariations = ['phone', 'phone number', 'phonenumber', 'mobile', 'cell', 'telephone'];
+                let phone = '';
+                for (const key of phoneVariations) {
+                    if (user[key] && user[key].trim()) {
+                        phone = user[key].trim();
+                        break;
+                    }
+                }
+
                 const parsedUser = {
-                    firstName: user['first name'] || user.firstname || '',
-                    lastName: user['last name'] || user.lastname || '',
-                    email: (user.email || user['email address'] || '').toLowerCase().trim(),
-                    phone: user.phone || user['phone number'] || ''
+                    firstName: firstName,
+                    lastName: lastName,
+                    email: email,
+                    phone: phone
                 };
                 users.push(parsedUser);
-                console.log(`  ✓ Parsed user: ${parsedUser.email} (${parsedUser.firstName} ${parsedUser.lastName})`);
+                console.log(`  ✅ Parsed user: ${parsedUser.email} (${parsedUser.firstName} ${parsedUser.lastName})`);
             } else {
-                console.warn(`  ⚠ Skipping row ${i + 1}: No email found. Headers:`, headers, 'Values:', values);
+                console.warn(`  ⚠ Skipping row ${i + 1}: No email found.`);
+                console.warn(`     Headers:`, headers);
+                console.warn(`     Values:`, values);
+                console.warn(`     Parsed user object:`, user);
             }
         }
 
