@@ -649,66 +649,229 @@ class AdminDashboardHandler {
         }
     }
 
-    handleCreateListing(e) {
+    async handleCreateListing(e) {
         e.preventDefault();
         
-        const formData = new FormData(e.target);
+        const form = e.target;
+        const submitButton = form.querySelector('button[type="submit"]');
+        const originalButtonText = submitButton ? submitButton.textContent : 'Create Listing';
+        
+        // Show loading state
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Creating...';
+        }
+
+        try {
+            // Validate form data
+            const validationResult = this.validateListingForm(form);
+            if (!validationResult.isValid) {
+                this.showMessage(validationResult.error, 'error');
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalButtonText;
+                }
+                return;
+            }
+
+            // Get form data
+            const formData = new FormData(form);
+            const listingData = this.processListingFormData(formData);
+            
+            // Get uploaded images
+            const imageUrls = this.getUploadedImages();
+            listingData.images = imageUrls.length > 0 ? imageUrls : ['assets/images/placeholder.txt'];
+            
+            // Add metadata
+            listingData.id = `asset-${Date.now()}`;
+            listingData.sellerId = this.user?.uid || 'admin';
+            listingData.sellerName = this.user?.displayName || this.user?.email || 'Admin';
+            listingData.sellerEmail = listingData.contactInfo?.email || this.user?.email || '';
+            listingData.status = 'active'; // Admin-created listings are auto-approved
+            listingData.createdAt = new Date().toISOString();
+            listingData.viewCount = 0;
+
+            // Save to multiple locations
+            const saveResults = await this.saveListing(listingData);
+            
+            // Add to local listings array
+            this.listings.push(listingData);
+            
+            // Show success message with Google Sheets option
+            let successMessage = 'Listing created successfully!';
+            if (typeof googleSheetsService !== 'undefined') {
+                const copySuccess = await googleSheetsService.copyListingToClipboard(listingData);
+                if (copySuccess) {
+                    successMessage += ' Data copied to clipboard - paste into Google Sheets Listings tab.';
+                } else {
+                    successMessage += ' Open Google Sheets to manually add this listing.';
+                }
+            }
+            
+            this.showMessage(successMessage, 'success');
+            
+            // Close modal and refresh
+            this.closeCreateListingModal();
+            this.renderListings();
+            this.updateDashboardStats();
+            this.loadRecentActivity();
+            this.loadSystemAlerts();
+            
+            // Open Google Sheets if available
+            if (typeof googleSheetsService !== 'undefined' && saveResults.googleSheetsReady) {
+                setTimeout(() => {
+                    if (confirm('Open Google Sheets to add this listing?')) {
+                        googleSheetsService.openSheetTab('listings');
+                    }
+                }, 1000);
+            }
+            
+        } catch (error) {
+            console.error('Error creating listing:', error);
+            this.showMessage(`Error creating listing: ${error.message}`, 'error');
+        } finally {
+            // Restore button state
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = originalButtonText;
+            }
+        }
+    }
+
+    validateListingForm(form) {
+        const formData = new FormData(form);
+        const title = formData.get('title')?.trim();
+        const category = formData.get('category')?.trim();
+        const location = formData.get('location')?.trim();
+        const description = formData.get('description')?.trim();
+        const startingBid = formData.get('startingBid');
+        const startDate = formData.get('startDate');
+        const endDate = formData.get('endDate');
+        const contactName = formData.get('contactName')?.trim();
+        const contactEmail = formData.get('contactEmail')?.trim();
+        const contactPhone = formData.get('contactPhone')?.trim();
+
+        // Required field validation
+        if (!title) {
+            return { isValid: false, error: 'Asset title is required' };
+        }
+        if (!category) {
+            return { isValid: false, error: 'Category is required' };
+        }
+        if (!location) {
+            return { isValid: false, error: 'Location is required' };
+        }
+        if (!description || description.length < 10) {
+            return { isValid: false, error: 'Description must be at least 10 characters' };
+        }
+        if (!startingBid || parseFloat(startingBid) < 0) {
+            return { isValid: false, error: 'Starting bid must be a valid positive number' };
+        }
+        if (!startDate) {
+            return { isValid: false, error: 'Auction start date is required' };
+        }
+        if (!endDate) {
+            return { isValid: false, error: 'Auction end date is required' };
+        }
+        if (!contactName) {
+            return { isValid: false, error: 'Contact person name is required' };
+        }
+        if (!contactEmail || !this.isValidEmail(contactEmail)) {
+            return { isValid: false, error: 'Valid contact email is required' };
+        }
+        if (!contactPhone) {
+            return { isValid: false, error: 'Contact phone number is required' };
+        }
+
+        // Date validation
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const now = new Date();
+        
+        if (isNaN(start.getTime())) {
+            return { isValid: false, error: 'Invalid start date format' };
+        }
+        if (isNaN(end.getTime())) {
+            return { isValid: false, error: 'Invalid end date format' };
+        }
+        if (end <= start) {
+            return { isValid: false, error: 'End date must be after start date' };
+        }
+        if (start < now) {
+            return { isValid: false, error: 'Start date cannot be in the past' };
+        }
+
+        return { isValid: true };
+    }
+
+    isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    processListingFormData(formData) {
         const listingData = Object.fromEntries(formData.entries());
         
-        // Get uploaded images
-        const uploadedImages = document.getElementById('uploadedImages');
-        const imageElements = uploadedImages ? uploadedImages.querySelectorAll('img') : [];
-        const imageUrls = Array.from(imageElements).map(img => img.src);
-        
-        // Add additional fields
-        listingData.id = `asset-${Date.now()}`;
-        listingData.sellerId = this.user?.uid || 'admin';
-        listingData.sellerName = this.user?.displayName || this.user?.email || 'Admin';
-        listingData.status = 'active'; // Admin-created listings are auto-approved
-        listingData.createdAt = new Date();
+        // Process dates
         listingData.startDate = listingData.startDate ? new Date(listingData.startDate) : new Date();
         listingData.endDate = listingData.endDate ? new Date(listingData.endDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-        listingData.viewCount = 0;
-        listingData.startingBid = parseInt(listingData.startingBid) || 0;
-        // Set currentBid equal to startingBid for backward compatibility (platform uses reservations, not bidding)
-        listingData.currentBid = listingData.startingBid;
-        listingData.images = imageUrls.length > 0 ? imageUrls : ['assets/images/placeholder.txt'];
         
-        // Add contact info
+        // Process numbers
+        listingData.startingBid = parseFloat(listingData.startingBid) || 0;
+        listingData.currentBid = listingData.startingBid; // For backward compatibility
+        
+        // Process contact info
         listingData.contactInfo = {
             name: listingData.contactName,
             phone: listingData.contactPhone,
             email: listingData.contactEmail
         };
 
-        // Save to demo data or Firebase
+        return listingData;
+    }
+
+    getUploadedImages() {
+        const uploadedImages = document.getElementById('uploadedImages');
+        if (!uploadedImages) return [];
+        
+        const imageElements = uploadedImages.querySelectorAll('img');
+        return Array.from(imageElements)
+            .map(img => img.src)
+            .filter(src => src && !src.includes('placeholder'));
+    }
+
+    async saveListing(listingData) {
+        const results = {
+            demo: false,
+            firebase: false,
+            googleSheetsReady: false
+        };
+
+        // Save to demo data
         if (typeof DEMO_ASSETS !== 'undefined') {
             DEMO_ASSETS.push(listingData);
-            // Also update SAMPLE_ASSETS if it exists
             if (typeof SAMPLE_ASSETS !== 'undefined') {
                 SAMPLE_ASSETS.push(listingData);
             }
+            results.demo = true;
         }
 
+        // Save to Firebase
         if (this.db && this.db.collection) {
             try {
-                this.db.collection('listings').add(listingData);
+                await this.db.collection('listings').add(listingData);
+                results.firebase = true;
             } catch (error) {
-                console.error('Error saving listing to database:', error);
+                console.error('Error saving listing to Firebase:', error);
             }
         }
 
-        // Add to local listings array
-        this.listings.push(listingData);
-        
-        this.showMessage('Listing created successfully!', 'success');
-        this.closeCreateListingModal();
-        
-        // Refresh listings display and dashboard
-        this.renderListings();
-        this.updateDashboardStats();
-        this.loadRecentActivity();
-        this.loadSystemAlerts();
+        // Prepare for Google Sheets (data is copied to clipboard)
+        if (typeof googleSheetsService !== 'undefined') {
+            results.googleSheetsReady = true;
+        }
+
+        return results;
     }
 
     handleImageUpload(e) {

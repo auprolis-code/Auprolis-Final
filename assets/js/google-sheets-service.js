@@ -574,6 +574,81 @@ class GoogleSheetsService {
             console.log('⏹ Stopped listings polling');
         }
     }
+
+    /**
+     * Prepare listing data for Google Sheets
+     * Formats listing data to match the Google Sheets structure
+     * @param {Object} listingData - Listing data object
+     * @returns {Object} Formatted listing data ready for Google Sheets
+     */
+    prepareListingForSheet(listingData) {
+        // Format dates for Google Sheets (ISO format or readable format)
+        const formatDate = (date) => {
+            if (!date) return '';
+            const d = date instanceof Date ? date : new Date(date);
+            if (isNaN(d.getTime())) return '';
+            // Format as YYYY-MM-DD HH:MM:SS for Google Sheets
+            return d.toISOString().replace('T', ' ').substring(0, 19);
+        };
+
+        // Format images as comma-separated string
+        const imagesStr = Array.isArray(listingData.images) 
+            ? listingData.images.join(', ') 
+            : (listingData.images || '');
+
+        // Map to Google Sheets column structure
+        // Expected columns: Title, Category, Location, Description, Starting Bid, Current Bid, End date, Images, Seller ID, Seller Name, Seller Email, Status, Condition
+        return {
+            'Title': listingData.title || '',
+            'Category': listingData.category || '',
+            'Location': listingData.location || '',
+            'Description': listingData.description || '',
+            'Starting Bid': listingData.startingBid || listingData.currentBid || 0,
+            'Current Bid': listingData.currentBid || listingData.startingBid || 0,
+            'End date': formatDate(listingData.endDate),
+            'Images': imagesStr,
+            'Seller ID': listingData.sellerId || '',
+            'Seller Name': listingData.sellerName || listingData.contactInfo?.name || '',
+            'Seller Email': listingData.sellerEmail || listingData.contactInfo?.email || '',
+            'Status': listingData.status || 'active',
+            'Condition': listingData.condition || '',
+            'Created at': formatDate(listingData.createdAt || new Date())
+        };
+    }
+
+    /**
+     * Copy listing data to clipboard in Google Sheets format
+     * @param {Object} listingData - Listing data object
+     * @returns {Promise<boolean>} Success status
+     */
+    async copyListingToClipboard(listingData) {
+        try {
+            const formatted = this.prepareListingForSheet(listingData);
+            // Convert to tab-separated values for easy paste into Google Sheets
+            const rowData = Object.values(formatted).join('\t');
+            
+            await navigator.clipboard.writeText(rowData);
+            console.log('✅ Listing data copied to clipboard');
+            return true;
+        } catch (error) {
+            console.error('Error copying listing to clipboard:', error);
+            // Fallback: show data in alert
+            const formatted = this.prepareListingForSheet(listingData);
+            const rowData = Object.entries(formatted)
+                .map(([key, value]) => `${key}: ${value}`)
+                .join('\n');
+            alert(`Copy this data to the Listings tab in Google Sheets:\n\n${rowData}`);
+            return false;
+        }
+    }
+
+    /**
+     * Get Google Sheets URL for listings tab
+     * @returns {string} URL to listings tab
+     */
+    getListingsTabUrl() {
+        return this.getTabUrl('listings');
+    }
 }
 
 // Initialize and export
