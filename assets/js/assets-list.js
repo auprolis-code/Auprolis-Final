@@ -288,10 +288,10 @@ class AssetsListHandler {
                         return b.currentBid - a.currentBid;
                     case 'ending-soon':
                         return new Date(a.endDate) - new Date(b.endDate);
-                    case 'most-bids':
-                        return (b.bidCount || 0) - (a.bidCount || 0);
-                    case 'least-bids':
-                        return (a.bidCount || 0) - (b.bidCount || 0);
+                    case 'most-reservations':
+                        return (b.reservationCount || 0) - (a.reservationCount || 0);
+                    case 'least-reservations':
+                        return (a.reservationCount || 0) - (b.reservationCount || 0);
                     default:
                         return 0;
                 }
@@ -656,7 +656,7 @@ class AssetsListHandler {
     }
 
     bookItem(assetId) {
-        // Redirect to Google Form for bidding spot reservation
+        // Redirect to Google Form for reservation
         const googleFormUrl = 'https://docs.google.com/forms/d/e/12vg2Tc2tct_uV6RIG3bJv1P5HmvLJvJtLLkhejSKpY0/viewform';
         
         // Optionally, you can pre-fill form fields if your Google Form supports it

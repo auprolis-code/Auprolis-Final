@@ -72,11 +72,11 @@ The application works in **demo mode** with the following accounts:
 
 ## Features Available in Demo Mode
 
-✅ **Browse Assets** - View available auction listings
+✅ **Browse Assets** - View available asset listings
 ✅ **Authentication** - Login/Logout functionality
 ✅ **Seller Dashboard** - Create and manage listings
-✅ **Buyer Dashboard** - View bids and watchlist
-✅ **Bidding System** - Place bids on assets
+✅ **Buyer Dashboard** - View reservations and watchlist
+✅ **Reservation System** - Make reservations on assets
 ✅ **Filter & Search** - Search and filter assets
 ✅ **Demo Data** - Pre-populated with sample data
 
@@ -124,7 +124,7 @@ Auprolis-Final/
 ├── admin-dashboard.html         # Admin dashboard
 ├── assets/
 │   ├── js/
-│   │   ├── demo-data.js        # Demo data (assets, users, bids)
+│   │   ├── demo-data.js        # Demo data (assets, users, reservations)
 │   │   ├── demo-mode.js        # Demo mode authentication
 │   │   ├── firebase-config.js   # Firebase configuration
 │   │   └── [other JS files]
@@ -138,8 +138,8 @@ Auprolis-Final/
 
 | Role | Email | Use Case |
 |------|-------|----------|
-| Buyer | buyer@demo.com | Browse assets, place bids |
-| Seller | seller@demo.com | Create listings, manage auctions |
+| Buyer | buyer@demo.com | Browse assets, make reservations |
+| Seller | seller@demo.com | Create listings, manage reservations |
 | Admin | admin@demo.com | Manage users and system |
 
 ## Support

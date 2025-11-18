@@ -4,8 +4,8 @@
 
 The Auprolis platform supports **3 user types**:
 - **Admin** - Full system access and management
-- **Buyer** - Can browse assets, place bids, and make reservations
-- **Sheriff** - Can create and manage asset listings, place bids
+- **Buyer** - Can browse assets and make reservations
+- **Sheriff** - Can create and manage asset listings, make reservations
 
 ## Database Structure
 
@@ -28,7 +28,7 @@ All users are stored with the following structure in both Firestore and Realtime
   status: "active" | "inactive" | "suspended" | "deleted",
   googleId: "google-user-id", // for OAuth users
   isEmailVerified: true | false,
-  permissions: ["placeBids", "createListings", ...],
+  permissions: ["makeReservations", "createListings", ...],
   createdAt: Timestamp,
   updatedAt: Timestamp,
   lastActivity: Timestamp
@@ -61,9 +61,9 @@ const user = await userTypeService.getUserWithType(userId);
 ## User Permissions
 
 ### Admin Permissions
-- `placeBids` - Can place bids on assets
+- `makeReservations` - Can make reservations on assets
 - `createListings` - Can create asset listings
-- `manageBids` - Can manage all bids
+- `manageReservations` - Can manage all reservations
 - `manageUsers` - Can manage all users
 - `viewAnalytics` - Can view system analytics
 - `manageSystem` - Full system management
@@ -71,14 +71,14 @@ const user = await userTypeService.getUserWithType(userId);
 - `manageAllReservations` - Can manage all reservations
 
 ### Sheriff Permissions
-- `placeBids` - Can place bids on assets
+- `makeReservations` - Can make reservations on assets
 - `createListings` - Can create asset listings
-- `manageBids` - Can manage bids on their assets
+- `manageReservations` - Can manage reservations on their assets
 - `viewAnalytics` - Can view analytics for their assets
 - `manageOwnReservations` - Can manage their own reservations
 
 ### Buyer Permissions
-- `placeBids` - Can place bids on assets
+- `makeReservations` - Can make reservations on assets
 - `viewAssets` - Can view asset listings
 - `manageOwnReservations` - Can manage their own reservations
 - `manageOwnWatchlist` - Can manage their own watchlist

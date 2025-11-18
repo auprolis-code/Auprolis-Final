@@ -41,10 +41,10 @@ AVAILABLE PAGES:
 
 DEMO FEATURES:
 --------------
-✓ Browse Assets - View available auction listings with filters
+✓ Browse Assets - View available asset listings with filters
 ✓ Authentication - Login/Logout with demo accounts
-✓ Seller Dashboard - Create listings, manage bids (simulated)
-✓ Buyer Dashboard - View bids and watchlist (simulated)
+✓ Seller Dashboard - Create listings, manage reservations (simulated)
+✓ Buyer Dashboard - View reservations and watchlist (simulated)
 ✓ Admin Dashboard - Manage users and system (simulated)
 ✓ All functionality works offline using localStorage
 

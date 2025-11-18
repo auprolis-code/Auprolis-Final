@@ -62,4 +62,4 @@ The landing page is fully responsive and optimized for:
 1. Add placeholder images to `assets/images/`
 2. Create additional pages (login, application form, assets list, payment portal)
 3. Implement dashboard functionality
-4. Add real-time features for bidding
+4. Add reservation features

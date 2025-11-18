@@ -69,24 +69,24 @@ class SellerDashboardHandler {
 
         // Quick action buttons
         const createListingBtn = document.getElementById('createListingBtn');
-        const viewBidsBtn = document.getElementById('viewBidsBtn');
+        const viewReservationsBtn = document.getElementById('viewReservationsBtn');
         const generateReportBtn = document.getElementById('generateReportBtn');
-        const manageAuctionsBtn = document.getElementById('manageAuctionsBtn');
+        const manageReservationsBtn = document.getElementById('manageReservationsBtn');
 
         if (createListingBtn) {
             createListingBtn.addEventListener('click', () => this.openCreateListingModal());
         }
 
-        if (viewBidsBtn) {
-            viewBidsBtn.addEventListener('click', () => this.switchTab('reservations'));
+        if (viewReservationsBtn) {
+            viewReservationsBtn.addEventListener('click', () => this.switchTab('reservations'));
         }
 
         if (generateReportBtn) {
             generateReportBtn.addEventListener('click', () => this.switchTab('analytics'));
         }
 
-        if (manageAuctionsBtn) {
-            manageAuctionsBtn.addEventListener('click', () => this.switchTab('listings'));
+        if (manageReservationsBtn) {
+            manageReservationsBtn.addEventListener('click', () => this.switchTab('listings'));
         }
 
         // Form submission

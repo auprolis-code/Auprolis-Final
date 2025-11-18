@@ -178,10 +178,10 @@ class BuyerDashboardFilters {
                         return b.currentBid - a.currentBid;
                     case 'ending-soon':
                         return new Date(a.endDate) - new Date(b.endDate);
-                    case 'most-bids':
-                        return (b.bidCount || 0) - (a.bidCount || 0);
-                    case 'least-bids':
-                        return (a.bidCount || 0) - (b.bidCount || 0);
+                    case 'most-reservations':
+                        return (b.reservationCount || 0) - (a.reservationCount || 0);
+                    case 'least-reservations':
+                        return (a.reservationCount || 0) - (b.reservationCount || 0);
                     default:
                         return 0;
                 }
