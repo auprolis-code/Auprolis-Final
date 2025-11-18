@@ -3,7 +3,23 @@
 
 class RealtimeDatabaseService {
     constructor() {
-        this.db = typeof firebase !== 'undefined' && firebase.database ? firebase.database() : null;
+        // Try to use pre-initialized instance from firebase-config.js first
+        if (typeof window !== 'undefined' && window.realtimeDb) {
+            this.db = window.realtimeDb;
+            console.log('✅ Using pre-initialized Realtime Database instance');
+        } else if (typeof firebase !== 'undefined' && firebase.database) {
+            // Fallback: initialize our own instance
+            try {
+                this.db = firebase.database();
+                console.log('✅ Realtime Database initialized in service');
+            } catch (error) {
+                console.warn('⚠️ Could not initialize Realtime Database:', error);
+                this.db = null;
+            }
+        } else {
+            console.warn('⚠️ Firebase Realtime Database not available');
+            this.db = null;
+        }
     }
 
     /**

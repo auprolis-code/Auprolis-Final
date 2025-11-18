@@ -6,11 +6,13 @@ class AdminDashboardHandler {
                     (typeof firebase !== 'undefined' && firebase.auth ? firebase.auth() : null);
         this.db = typeof demoFirestore !== 'undefined' ? demoFirestore : 
                   (typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null);
+        this.realtimeDb = typeof realtimeDbService !== 'undefined' ? realtimeDbService : null;
         this.user = null;
         this.userData = null;
         this.listings = [];
         this.users = [];
         this.transactions = [];
+        this.realtimeListeners = []; // Store real-time listener unsubscribe functions
         
         this.init();
     }
@@ -64,14 +66,8 @@ class AdminDashboardHandler {
             });
         });
 
-        // Create listing form
-        const createListingForm = document.getElementById('createListingForm');
-        if (createListingForm) {
-            createListingForm.addEventListener('submit', (e) => this.handleCreateListing(e));
-        }
-
-        // Image upload - setup initially
-        this.setupImageUpload();
+        // Create listing chat handler will be initialized when modal opens
+        this.listingChatHandler = null;
         
         // Also bind create listing button directly
         const createListingBtn = document.getElementById('createListingBtn');
@@ -325,6 +321,9 @@ class AdminDashboardHandler {
                         this.loadRecentActivity();
                         this.loadSystemAlerts();
                     });
+                    
+                    // Also set up Firebase Realtime Database listeners for instant updates
+                    this.setupRealtimeListeners();
                     return;
                 }
             } catch (error) {
@@ -332,7 +331,29 @@ class AdminDashboardHandler {
             }
         }
         
-        // Fallback to demo data or Firebase
+        // Load from Firebase Realtime Database if available
+        if (this.realtimeDb && this.realtimeDb.db) {
+            try {
+                const assets = await this.realtimeDb.getAllAssets();
+                if (assets && assets.length > 0) {
+                    // Convert assets to listings format
+                    this.listings = assets.map(asset => ({
+                        ...asset,
+                        id: asset.assetId || asset.id || `asset-${Date.now()}`,
+                        status: asset.status || 'active'
+                    }));
+                    console.log(`Loaded ${this.listings.length} listings from Realtime Database`);
+                    
+                    // Set up real-time listeners
+                    this.setupRealtimeListeners();
+                    return;
+                }
+            } catch (error) {
+                console.warn('Could not load listings from Realtime Database:', error);
+            }
+        }
+        
+        // Fallback to demo data or Firebase Firestore
         if (typeof DEMO_ASSETS !== 'undefined') {
             this.listings = DEMO_ASSETS.map(asset => ({
                 ...asset,
@@ -342,11 +363,143 @@ class AdminDashboardHandler {
             try {
                 const snapshot = await this.db.collection('listings').get();
                 this.listings = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Set up Firestore real-time listener
+                this.setupFirestoreListeners();
             } catch (error) {
                 console.error('Error loading listings:', error);
                 this.listings = [];
             }
         }
+        
+        // Set up real-time listeners if not already done
+        if (!this.realtimeListeners.length) {
+            this.setupRealtimeListeners();
+        }
+    }
+    
+    setupRealtimeListeners() {
+        // Clean up existing listeners
+        this.cleanupRealtimeListeners();
+        
+        // Set up Firebase Realtime Database listeners for instant updates
+        if (this.realtimeDb && this.realtimeDb.db) {
+            console.log('🔴 Setting up real-time listeners for listings...');
+            console.log('📊 Realtime Database status:', {
+                serviceAvailable: !!this.realtimeDb,
+                dbAvailable: !!this.realtimeDb.db,
+                dbType: typeof this.realtimeDb.db
+            });
+            
+            // Listen for new listings
+            const unsubscribeNew = this.realtimeDb.onChildAdded('assets', (asset, key) => {
+                console.log('✨ New listing detected in real-time:', asset.title || key);
+                
+                // Check if listing already exists
+                const existingIndex = this.listings.findIndex(l => 
+                    (l.id === key) || (l.assetId === key) || (l.id === asset.id) || (l.assetId === asset.assetId)
+                );
+                
+                const listingData = {
+                    ...asset,
+                    id: asset.assetId || asset.id || key,
+                    assetId: asset.assetId || key
+                };
+                
+                if (existingIndex >= 0) {
+                    // Update existing listing
+                    this.listings[existingIndex] = listingData;
+                } else {
+                    // Add new listing
+                    this.listings.unshift(listingData); // Add to beginning
+                }
+                
+                // Update UI immediately
+                this.renderListings();
+                this.updateDashboardStats();
+                this.loadRecentActivity();
+                this.loadSystemAlerts();
+                
+                // Show notification
+                this.showMessage(`New listing added: ${listingData.title || 'Untitled'}`, 'success');
+            });
+            
+            // Listen for updated listings
+            const unsubscribeUpdated = this.realtimeDb.onChildChanged('assets', (asset, key) => {
+                console.log('🔄 Listing updated in real-time:', asset.title || key);
+                
+                const existingIndex = this.listings.findIndex(l => 
+                    (l.id === key) || (l.assetId === key) || (l.id === asset.id) || (l.assetId === asset.assetId)
+                );
+                
+                if (existingIndex >= 0) {
+                    this.listings[existingIndex] = {
+                        ...this.listings[existingIndex],
+                        ...asset,
+                        id: asset.assetId || asset.id || key,
+                        assetId: asset.assetId || key
+                    };
+                    
+                    // Update UI immediately
+                    this.renderListings();
+                    this.updateDashboardStats();
+                    this.loadRecentActivity();
+                }
+            });
+            
+            // Store unsubscribe functions
+            this.realtimeListeners.push(unsubscribeNew, unsubscribeUpdated);
+            console.log('✅ Real-time listeners active');
+        }
+    }
+    
+    setupFirestoreListeners() {
+        // Set up Firestore real-time listeners as fallback
+        if (this.db && this.db.collection) {
+            try {
+                // Listen for new listings
+                this.db.collection('listings')
+                    .orderBy('createdAt', 'desc')
+                    .limit(50)
+                    .onSnapshot((snapshot) => {
+                        snapshot.docChanges().forEach((change) => {
+                            if (change.type === 'added') {
+                                const listingData = { id: change.doc.id, ...change.doc.data() };
+                                
+                                // Check if already exists
+                                const exists = this.listings.some(l => l.id === listingData.id);
+                                if (!exists) {
+                                    this.listings.unshift(listingData);
+                                    this.renderListings();
+                                    this.updateDashboardStats();
+                                    this.loadRecentActivity();
+                                    this.showMessage(`New listing added: ${listingData.title || 'Untitled'}`, 'success');
+                                }
+                            } else if (change.type === 'modified') {
+                                const listingData = { id: change.doc.id, ...change.doc.data() };
+                                const index = this.listings.findIndex(l => l.id === listingData.id);
+                                if (index >= 0) {
+                                    this.listings[index] = listingData;
+                                    this.renderListings();
+                                    this.updateDashboardStats();
+                                }
+                            }
+                        });
+                    });
+            } catch (error) {
+                console.warn('Error setting up Firestore listeners:', error);
+            }
+        }
+    }
+    
+    cleanupRealtimeListeners() {
+        // Unsubscribe from all real-time listeners
+        this.realtimeListeners.forEach(unsubscribe => {
+            if (typeof unsubscribe === 'function') {
+                unsubscribe();
+            }
+        });
+        this.realtimeListeners = [];
     }
 
     async loadUsers() {
@@ -622,30 +775,36 @@ class AdminDashboardHandler {
         }
     }
 
-    // Create Listing functionality
+    // Create Listing functionality - Chat Interface
     openCreateListingModal() {
-        console.log('Opening create listing modal...');
+        console.log('Opening create listing chat interface...');
         const modal = document.getElementById('createListingModal');
         if (!modal) {
             console.error('Modal not found!');
             alert('Create listing modal not found. Please refresh the page.');
             return;
         }
-        this.setupImageUpload(); // Setup image upload when opening modal
+        
+        // Initialize chat handler
+        if (!this.listingChatHandler) {
+            this.listingChatHandler = new ListingChatHandler(this);
+        }
+        
         this.showModal('createListingModal');
+        
+        // Start the chat flow
+        setTimeout(() => {
+            if (this.listingChatHandler) {
+                this.listingChatHandler.start();
+            }
+        }, 300);
     }
 
     closeCreateListingModal() {
         this.closeModal('createListingModal');
-        // Reset form
-        const form = document.getElementById('createListingForm');
-        if (form) {
-            form.reset();
-            // Clear uploaded images
-            const uploadedImages = document.getElementById('uploadedImages');
-            if (uploadedImages) {
-                uploadedImages.innerHTML = '';
-            }
+        // Reset chat handler
+        if (this.listingChatHandler) {
+            this.listingChatHandler = null;
         }
     }
 
@@ -844,6 +1003,7 @@ class AdminDashboardHandler {
         const results = {
             demo: false,
             firebase: false,
+            realtimeDb: false,
             googleSheetsReady: false
         };
 
@@ -856,7 +1016,30 @@ class AdminDashboardHandler {
             results.demo = true;
         }
 
-        // Save to Firebase
+        // Save to Firebase Realtime Database for instant real-time updates
+        if (this.realtimeDb && this.realtimeDb.db) {
+            try {
+                const assetId = listingData.id || listingData.assetId || `asset-${Date.now()}`;
+                console.log('💾 Saving listing to Realtime Database:', { assetId, title: listingData.title });
+                await this.realtimeDb.storeAsset(assetId, listingData);
+                results.realtimeDb = true;
+                console.log('✅ Listing saved to Realtime Database for real-time updates');
+            } catch (error) {
+                console.error('❌ Error saving listing to Realtime Database:', error);
+                console.error('Error details:', {
+                    message: error.message,
+                    code: error.code,
+                    stack: error.stack
+                });
+            }
+        } else {
+            console.warn('⚠️ Realtime Database not available:', {
+                realtimeDbExists: !!this.realtimeDb,
+                dbExists: this.realtimeDb ? !!this.realtimeDb.db : false
+            });
+        }
+
+        // Save to Firebase Firestore
         if (this.db && this.db.collection) {
             try {
                 await this.db.collection('listings').add(listingData);
@@ -1958,6 +2141,9 @@ class AdminDashboardHandler {
 
     async handleLogout() {
         try {
+            // Clean up real-time listeners before logout
+            this.cleanupRealtimeListeners();
+            
             localStorage.removeItem('demo_user');
             
             if (this.auth && this.auth.signOut) {
@@ -1967,6 +2153,7 @@ class AdminDashboardHandler {
             window.location.href = 'login.html';
         } catch (error) {
             console.error('Error signing out:', error);
+            this.cleanupRealtimeListeners();
             localStorage.removeItem('demo_user');
             window.location.href = 'login.html';
         }
