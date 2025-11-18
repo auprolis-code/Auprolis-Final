@@ -255,6 +255,7 @@ class ListingChatHandler {
     }
 
     start() {
+        console.log('Starting chat handler...');
         this.currentStep = 0;
         this.listingData = {};
         this.uploadedImages = [];
@@ -263,6 +264,10 @@ class ListingChatHandler {
         
         if (chatMessages) chatMessages.innerHTML = '';
         if (chatInputContainer) chatInputContainer.innerHTML = '';
+        
+        // Ensure handler is globally accessible
+        window.listingChatHandler = this;
+        console.log('Chat handler initialized and set to window.listingChatHandler');
         
         this.updateProgress();
         this.askNextQuestion();
@@ -343,7 +348,7 @@ class ListingChatHandler {
                             placeholder="${question.placeholder || ''}"
                             autocomplete="off"
                         >
-                        <button class="chat-send-btn" onclick="listingChatHandler.handleAnswer()">Send →</button>
+                        <button class="chat-send-btn" onclick="if(window.listingChatHandler){window.listingChatHandler.handleAnswer();}else{console.error('listingChatHandler not available');}">Send →</button>
                     </div>
                     ${errorDiv}
                 `;
@@ -358,7 +363,7 @@ class ListingChatHandler {
                             placeholder="${question.placeholder || ''}"
                             rows="4"
                         ></textarea>
-                        <button class="chat-send-btn" onclick="listingChatHandler.handleAnswer()">Send →</button>
+                        <button class="chat-send-btn" onclick="if(window.listingChatHandler){window.listingChatHandler.handleAnswer();}else{console.error('listingChatHandler not available');}">Send →</button>
                     </div>
                     ${errorDiv}
                 `;
@@ -375,16 +380,19 @@ class ListingChatHandler {
                             min="0"
                             step="${question.id === 'year' ? '1' : '0.01'}"
                         >
-                        <button class="chat-send-btn" onclick="listingChatHandler.handleAnswer()">Send →</button>
+                        <button class="chat-send-btn" onclick="if(window.listingChatHandler){window.listingChatHandler.handleAnswer();}else{console.error('listingChatHandler not available');}">Send →</button>
                     </div>
                     ${errorDiv}
                 `;
                 break;
 
             case 'select':
-                const optionsHTML = question.options.map(opt => 
-                    `<div class="chat-option" data-value="${opt.value}" onclick="listingChatHandler.selectOption('${opt.value}', '${opt.label}')">${opt.label}</div>`
-                ).join('');
+                const optionsHTML = question.options.map((opt, index) => {
+                    // Escape quotes in label for onclick handler
+                    const escapedLabel = opt.label.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    const escapedValue = opt.value.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    return `<div class="chat-option" data-value="${escapedValue}" data-index="${index}" onclick="if(window.listingChatHandler){window.listingChatHandler.selectOption('${escapedValue}', '${escapedLabel}');}else{console.error('listingChatHandler not available');}">${opt.label}</div>`;
+                }).join('');
                 
                 inputHTML = `
                     <div class="chat-options-container">
@@ -403,7 +411,7 @@ class ListingChatHandler {
                             id="chatInput"
                             min="${new Date().toISOString().slice(0, 16)}"
                         >
-                        <button class="chat-send-btn" onclick="listingChatHandler.handleAnswer()">Send →</button>
+                        <button class="chat-send-btn" onclick="if(window.listingChatHandler){window.listingChatHandler.handleAnswer();}else{console.error('listingChatHandler not available');}">Send →</button>
                     </div>
                     ${errorDiv}
                 `;
@@ -414,11 +422,11 @@ class ListingChatHandler {
                     <div class="chat-file-upload" onclick="document.getElementById('chatFileInput').click()">
                         <div class="chat-file-upload-icon">📷</div>
                         <div class="chat-file-upload-text">Click to upload images or drag and drop</div>
-                        <input type="file" id="chatFileInput" multiple accept="image/*" style="display: none;" onchange="listingChatHandler.handleFileUpload(event)">
+                        <input type="file" id="chatFileInput" multiple accept="image/*" style="display: none;" onchange="if(window.listingChatHandler){window.listingChatHandler.handleFileUpload(event);}else{console.error('listingChatHandler not available');}">
                     </div>
                     <div class="chat-uploaded-images" id="chatUploadedImages"></div>
                     <div class="chat-input-wrapper" style="margin-top: 1rem;">
-                        <button class="chat-send-btn" onclick="listingChatHandler.handleAnswer()" style="width: 100%;">${this.uploadedImages.length > 0 ? 'Continue →' : 'Skip this step →'}</button>
+                        <button class="chat-send-btn" onclick="if(window.listingChatHandler){window.listingChatHandler.handleAnswer();}else{console.error('listingChatHandler not available');}" style="width: 100%;">${this.uploadedImages.length > 0 ? 'Continue →' : 'Skip this step →'}</button>
                     </div>
                     ${errorDiv}
                 `;
@@ -426,6 +434,25 @@ class ListingChatHandler {
         }
 
         chatInputContainer.innerHTML = inputHTML;
+
+        // Add event delegation for select options (more robust than inline onclick)
+        if (question.type === 'select') {
+            const optionsList = chatInputContainer.querySelector('.options-list');
+            if (optionsList) {
+                optionsList.addEventListener('click', (e) => {
+                    const option = e.target.closest('.chat-option');
+                    if (option) {
+                        const value = option.getAttribute('data-value');
+                        const label = option.textContent.trim();
+                        if (window.listingChatHandler) {
+                            window.listingChatHandler.selectOption(value, label);
+                        } else {
+                            console.error('listingChatHandler not available');
+                        }
+                    }
+                });
+            }
+        }
 
         // Auto-focus text inputs
         if (question.type !== 'select' && question.type !== 'file') {
@@ -437,15 +464,22 @@ class ListingChatHandler {
                 if (question.type !== 'textarea') {
                     input.addEventListener('keypress', (e) => {
                         if (e.key === 'Enter') {
-                            this.handleAnswer();
+                            if (window.listingChatHandler) {
+                                window.listingChatHandler.handleAnswer();
+                            }
                         }
                     });
                 }
             }
         }
+
+        // Debug: Log handler availability
+        console.log('Chat handler available:', !!window.listingChatHandler);
     }
 
     selectOption(value, label) {
+        console.log('selectOption called:', { value, label, currentStep: this.currentStep });
+        
         // Remove previous selections
         document.querySelectorAll('.chat-option').forEach(opt => {
             opt.classList.remove('selected');
@@ -455,14 +489,23 @@ class ListingChatHandler {
         const selected = document.querySelector(`[data-value="${value}"]`);
         if (selected) {
             selected.classList.add('selected');
+            console.log('Option selected:', selected);
+        } else {
+            console.warn('Selected option not found in DOM:', value);
         }
 
         // Store value and move to next question after short delay
         setTimeout(() => {
             const question = this.questions[this.currentStep];
+            if (!question) {
+                console.error('No question found at current step:', this.currentStep);
+                return;
+            }
+            
             // Only store if value is provided (not empty string for optional fields)
             if (value !== '' || question.required) {
                 this.listingData[question.id] = value || null;
+                console.log('Stored data:', { field: question.id, value: this.listingData[question.id] });
             }
             this.addUserMessage(value === '' ? 'Skip' : label);
             this.currentStep++;
@@ -565,7 +608,7 @@ class ListingChatHandler {
         uploadedImagesDiv.innerHTML = this.uploadedImages.map((img, index) => `
             <div class="chat-uploaded-image">
                 <img src="${img.src}" alt="Uploaded image">
-                <button class="chat-uploaded-image-remove" onclick="listingChatHandler.removeImage(${index})">×</button>
+                <button class="chat-uploaded-image-remove" onclick="if(window.listingChatHandler){window.listingChatHandler.removeImage(${index});}else{console.error('listingChatHandler not available');}">×</button>
             </div>
         `).join('');
     }

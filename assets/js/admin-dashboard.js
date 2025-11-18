@@ -788,6 +788,13 @@ class AdminDashboardHandler {
         // Initialize chat handler
         if (!this.listingChatHandler) {
             this.listingChatHandler = new ListingChatHandler(this);
+            // Make it globally accessible for onclick handlers (will also be set in start() method)
+            window.listingChatHandler = this.listingChatHandler;
+            console.log('Chat handler created and set to window');
+        } else {
+            // Re-set to window in case it was cleared
+            window.listingChatHandler = this.listingChatHandler;
+            console.log('Chat handler re-set to window');
         }
         
         this.showModal('createListingModal');
@@ -805,6 +812,7 @@ class AdminDashboardHandler {
         // Reset chat handler
         if (this.listingChatHandler) {
             this.listingChatHandler = null;
+            window.listingChatHandler = null;
         }
     }
 
