@@ -27,10 +27,17 @@
       }
     },
     "bids": {
-      ".read": "auth != null",
-      ".write": "auth != null && newData.child('userId').val() === auth.uid",
       "$bidId": {
-        ".write": "auth != null && (data.child('userId').val() === auth.uid || root.child('users').child(auth.uid).child('userType').val() === 'admin')"
+        ".read": "auth != null && (data.child('userId').val() === auth.uid || data.child('assetId').exists() || root.child('users').child(auth.uid).child('userType').val() === 'admin')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() === 'buyer' || root.child('users').child(auth.uid).child('userType').val() === 'sheriff' || root.child('users').child(auth.uid).child('userType').val() === 'admin') && newData.child('userId').val() === auth.uid"
+      }
+    },
+    "chats": {
+      "$assetId": {
+        "$messageId": {
+          ".read": "auth != null && (data.child('senderId').val() === auth.uid || data.child('receiverId').val() === auth.uid || root.child('assets').child($assetId).child('createdBy').val() === auth.uid || root.child('users').child(auth.uid).child('userType').val() === 'admin')",
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() === 'buyer' || root.child('users').child(auth.uid).child('userType').val() === 'sheriff' || root.child('users').child(auth.uid).child('userType').val() === 'admin') && newData.child('senderId').val() === auth.uid && (newData.child('receiverId').val() === root.child('assets').child($assetId).child('createdBy').val() || newData.child('senderId').val() === root.child('assets').child($assetId).child('createdBy').val())"
+        }
       }
     },
     "notifications": {

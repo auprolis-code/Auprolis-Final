@@ -73,21 +73,38 @@ service cloud.firestore {
     
     // Reservations collection
     match /reservations/{reservationId} {
-      // Users can read their own reservations, admins can read all
+      // Helper function to check if reservation is for sheriff's asset
+      function isReservationForSheriffAsset() {
+        let assetId = resource.data.assetId;
+        let asset = get(/databases/$(database)/documents/assets/$(assetId));
+        return asset.data.createdBy == request.auth.uid;
+      }
+      
+      // Buyers can read their own reservations
+      // Sheriffs can read reservations for their assets
+      // Admins can read all reservations
       allow read: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid || isAdmin()
+        resource.data.userId == request.auth.uid || 
+        isReservationForSheriffAsset() || 
+        isAdmin()
       );
       
-      // Authenticated users can create reservations
+      // Buyers can create their own reservations
       allow create: if isAuthenticated() && 
+                     isBuyer() &&
                      request.resource.data.userId == request.auth.uid;
       
-      // Users can update their own reservations, admins can update any
+      // Buyers can update their own reservations
+      // Sheriffs can update reservations for their assets
+      // Admins can update any reservation
       allow update: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid || isAdmin()
+        (isBuyer() && resource.data.userId == request.auth.uid) ||
+        (isSheriff() && isReservationForSheriffAsset()) ||
+        isAdmin()
       );
       
-      // Users can delete their own reservations, admins can delete any
+      // Buyers can delete their own reservations
+      // Admins can delete any reservation
       allow delete: if isAuthenticated() && (
         resource.data.userId == request.auth.uid || isAdmin()
       );
