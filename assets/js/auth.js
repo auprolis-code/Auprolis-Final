@@ -366,7 +366,9 @@ class AuthManager {
             return;
         }
         
+        // COMMENTED OUT: Google Sheets verification step - temporarily disabled
         // For non-admin users, check Google Sheets if service is available
+        /*
         if (typeof googleSheetsService !== 'undefined' && userEmail) {
             console.log('🔐 Starting Google Sheets verification for:', userEmail);
             console.log('Google Sheets Service available:', typeof googleSheetsService !== 'undefined');
@@ -400,6 +402,8 @@ class AuthManager {
             console.log('googleSheetsService available:', typeof googleSheetsService !== 'undefined');
             console.log('userEmail:', userEmail);
         }
+        */
+        console.log('⚠️ Google Sheets verification is currently disabled - allowing all users to proceed');
         
         // Map user type to dashboard URL
         let redirectUrl = 'buyer-dashboard.html'; // default
