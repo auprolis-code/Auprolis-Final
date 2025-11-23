@@ -95,8 +95,7 @@ const demoAuth = {
             displayName: email.split('@')[0], // Use email prefix as display name
             userType: 'buyer',
             createdAt: new Date(),
-            subscriptionStatus: 'pending',
-            paymentStatus: 'pending'
+            subscriptionStatus: 'active'
         };
         
         // Add to demo users

@@ -172,8 +172,7 @@ class SignUpHandler {
                 lastName: lastName,
                 displayName: fullName,
                 userType: 'buyer',
-                subscriptionStatus: 'pending',
-                paymentStatus: 'pending',
+                subscriptionStatus: 'active',
                 status: 'active',
                 isEmailVerified: false,
                 permissions: ['placeBids']
@@ -182,10 +181,10 @@ class SignUpHandler {
             // Send confirmation email
             await this.sendConfirmationEmail(user);
             
-            // Redirect to payment page
-            this.showMessage('Account created successfully! Redirecting to payment...', 'success');
+            // Redirect to dashboard
+            this.showMessage('Account created successfully! Redirecting to dashboard...', 'success');
             setTimeout(() => {
-                window.location.href = `payment-portal.html?userId=${user.uid}&email=${encodeURIComponent(email)}`;
+                window.location.href = 'buyer-dashboard.html';
             }, 2000);
             
         } catch (error) {
@@ -221,8 +220,7 @@ class SignUpHandler {
                 lastName: lastName,
                 displayName: displayName,
                 userType: 'buyer',
-                subscriptionStatus: 'pending',
-                paymentStatus: 'pending',
+                subscriptionStatus: 'active',
                 status: 'active',
                 isEmailVerified: user.emailVerified || true, // Google users are verified
                 permissions: ['placeBids']
@@ -231,10 +229,10 @@ class SignUpHandler {
             // Send confirmation email
             await this.sendConfirmationEmail(user);
             
-            // Redirect to payment page
-            this.showMessage('Account created successfully! Redirecting to payment...', 'success');
+            // Redirect to dashboard
+            this.showMessage('Account created successfully! Redirecting to dashboard...', 'success');
             setTimeout(() => {
-                window.location.href = `payment-portal.html?userId=${user.uid}&email=${encodeURIComponent(user.email)}`;
+                window.location.href = 'buyer-dashboard.html';
             }, 2000);
             
         } catch (error) {

@@ -279,7 +279,6 @@ class PaymentHandler {
         try {
             await this.db.collection('users').doc(this.userId).update({
                 subscriptionStatus: 'active',
-                paymentStatus: 'completed',
                 subscriptionStartDate: new Date(),
                 paymentMethod: this.selectedPaymentMethod,
                 transactionId: paymentResult.transactionId,

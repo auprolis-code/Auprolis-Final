@@ -78,7 +78,7 @@ exports.getUser = async (req, res) => {
 // @access  Private
 exports.updateUser = async (req, res) => {
   try {
-    const { fullName, phone, displayName, userType, subscriptionStatus, paymentStatus, status } = req.body;
+    const { fullName, phone, displayName, userType, subscriptionStatus, status } = req.body;
 
     // Check if user exists
     let user = await User.findById(req.params.id);
@@ -113,7 +113,6 @@ exports.updateUser = async (req, res) => {
     if (req.user.userType === 'admin') {
       if (userType) updateFields.userType = userType;
       if (subscriptionStatus) updateFields.subscriptionStatus = subscriptionStatus;
-      if (paymentStatus) updateFields.paymentStatus = paymentStatus;
       if (status) updateFields.status = status;
     }
 

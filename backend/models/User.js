@@ -52,16 +52,11 @@ const userSchema = new mongoose.Schema({
     required: true
   },
   
-  // Subscription and payment
+  // Subscription
   subscriptionStatus: {
     type: String,
     enum: ['pending', 'active', 'expired', 'cancelled'],
-    default: 'pending'
-  },
-  paymentStatus: {
-    type: String,
-    enum: ['pending', 'completed', 'failed', 'refunded'],
-    default: 'pending'
+    default: 'active'
   },
   
   // Account status

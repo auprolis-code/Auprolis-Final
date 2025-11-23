@@ -42,8 +42,7 @@ exports.register = async (req, res) => {
       displayName: fullName,
       phone,
       userType: userType || 'buyer',
-      subscriptionStatus: 'pending',
-      paymentStatus: 'pending',
+      subscriptionStatus: 'active',
       status: 'active',
       permissions: userType === 'admin' 
         ? ['createListings', 'placeBids', 'manageUsers', 'viewAnalytics', 'manageSystem']
@@ -66,7 +65,6 @@ exports.register = async (req, res) => {
           displayName: user.displayName,
           userType: user.userType,
           subscriptionStatus: user.subscriptionStatus,
-          paymentStatus: user.paymentStatus,
           status: user.status,
           createdAt: user.createdAt
         },
@@ -155,7 +153,6 @@ exports.login = async (req, res) => {
           phone: user.phone,
           userType: user.userType,
           subscriptionStatus: user.subscriptionStatus,
-          paymentStatus: user.paymentStatus,
           status: user.status,
           permissions: user.permissions,
           createdAt: user.createdAt,
@@ -284,8 +281,7 @@ exports.googleAuth = async (req, res) => {
         lastName: lastName || nameParts.slice(1).join(' ') || '',
         displayName: displayName || email.split('@')[0],
         userType: 'buyer',
-        subscriptionStatus: 'pending',
-        paymentStatus: 'pending',
+        subscriptionStatus: 'active',
         status: 'active',
         isEmailVerified: true,
         permissions: ['placeBids']
@@ -306,7 +302,6 @@ exports.googleAuth = async (req, res) => {
           displayName: user.displayName,
           userType: user.userType,
           subscriptionStatus: user.subscriptionStatus,
-          paymentStatus: user.paymentStatus,
           status: user.status,
           createdAt: user.createdAt
         },

@@ -379,25 +379,19 @@ class DashboardHandler {
         const statusElement = document.getElementById('subscriptionStatus');
         if (!statusElement || !this.userData) return;
 
-        const status = this.userData.subscriptionStatus || 'pending';
-        const paymentStatus = this.userData.paymentStatus || 'pending';
+        const status = this.userData.subscriptionStatus || 'active';
 
         let statusHTML = '';
         
-        if (status === 'active' && paymentStatus === 'completed') {
+        if (status === 'active') {
             statusHTML = `
                 <span class="status-badge active">Active</span>
-                <p>Your premium subscription is active. You have full access to all features.</p>
-            `;
-        } else if (paymentStatus === 'pending') {
-            statusHTML = `
-                <span class="status-badge pending">Payment Pending</span>
-                <p>Your payment is being processed. You'll have full access once confirmed.</p>
+                <p>Your account is active. You have full access to all features.</p>
             `;
         } else {
             statusHTML = `
                 <span class="status-badge pending">Pending</span>
-                <p>Your subscription is being processed. You'll have full access once payment is confirmed.</p>
+                <p>Your subscription is being processed.</p>
             `;
         }
 
