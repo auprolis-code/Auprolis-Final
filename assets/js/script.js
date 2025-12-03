@@ -233,8 +233,8 @@ window.addEventListener('scroll', debouncedScrollHandler);
 
 // Enhanced Button Functionality
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle "Browse Assets" button
-    const browseAssetsBtn = document.querySelector('a[href="assets-list.html"]');
+    // Handle "View Available Deals" button
+    const browseAssetsBtn = document.querySelector('.hero-buttons a[href="login.html"]');
     if (browseAssetsBtn) {
         browseAssetsBtn.addEventListener('click', function(e) {
             // Add loading state
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Handle "Become a Seller" button
+    // Handle "List an Asset (Sheriff / Bank)" button
     const becomeSellerBtn = document.querySelector('a[href="application-form.html"]');
     if (becomeSellerBtn) {
         becomeSellerBtn.addEventListener('click', function(e) {
