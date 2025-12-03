@@ -257,10 +257,10 @@ section {
 
 .pricing-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 2rem;
     margin-top: 3rem;
-    max-width: 800px;
+    max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
 }
@@ -273,6 +273,13 @@ section {
     text-align: center;
     position: relative;
     transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.pricing-card .btn {
+    margin-top: auto;
+    margin-top: 2rem;
 }
 
 .pricing-card:hover {
@@ -337,6 +344,62 @@ section {
 
 .pricing-features li:last-child {
     border-bottom: none;
+}
+
+.pricing-subtitle {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+    font-style: italic;
+}
+
+.pricing-description {
+    font-size: 0.9rem;
+    color: #64748b;
+    margin: 0.5rem 0;
+    line-height: 1.5;
+}
+
+.pricing-features-section {
+    text-align: left;
+    margin: 2rem 0;
+}
+
+.pricing-features-section h4 {
+    font-size: 1.1rem;
+    color: #1e293b;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.pricing-features {
+    list-style: none;
+    padding: 0;
+}
+
+.pricing-features li {
+    padding: 0.75rem 0;
+    color: #64748b;
+    border-bottom: 1px solid #f1f5f9;
+    line-height: 1.6;
+}
+
+.pricing-features li strong {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+.pricing-subfeatures {
+    list-style: disc;
+    margin: 0.5rem 0 0.5rem 1.5rem;
+    padding-left: 1rem;
+}
+
+.pricing-subfeatures li {
+    padding: 0.4rem 0;
+    border-bottom: none;
+    font-size: 0.9rem;
+    color: #64748b;
 }
 
 /* Featured Assets Section */
