@@ -39,10 +39,12 @@ class LandingPageAssets {
             selectedAssets.push(...selected);
         });
 
-        // If we don't have enough items, fill with remaining assets
+        // If we don't have enough items, fill with remaining property assets only
         if (selectedAssets.length < 10) {
             const remaining = this.assets.filter(asset => 
-                !selectedAssets.find(selected => selected.id === asset.id) && asset.isActive !== false
+                asset.category === 'property' &&
+                !selectedAssets.find(selected => selected.id === asset.id) && 
+                asset.isActive !== false
             );
             selectedAssets.push(...remaining.slice(0, 10 - selectedAssets.length));
         }
@@ -66,7 +68,6 @@ class LandingPageAssets {
      * Creates HTML for a single asset card
      */
     createAssetCard(asset) {
-        const price = (asset.startingBid || asset.currentBid || 0).toLocaleString();
         const imageSrc = asset.images && asset.images.length > 0 ? asset.images[0] : 'assets/images/placeholder.png';
         
         return `
@@ -76,12 +77,6 @@ class LandingPageAssets {
                 </div>
                 <div class="asset-content">
                     <h3>${asset.title}</h3>
-                    <div class="asset-price" style="margin: 1rem 0;">
-                        <div>
-                            <div style="font-size: 1.1rem; font-weight: 600; color: #1e293b;">BWP ${price}</div>
-                            <div style="font-size: 0.8rem; color: #64748b;">Starting Price</div>
-                        </div>
-                    </div>
                     <a href="login.html" class="btn btn-outline">View Details</a>
                 </div>
             </div>
