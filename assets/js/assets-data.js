@@ -2,82 +2,9 @@
 // This file contains comprehensive asset data for the enhanced dashboard
 
 const SAMPLE_ASSETS = [
+    // Distressed Properties Only - Removed vehicles, equipment, furniture, and electronics
     {
         id: 'asset-001',
-        title: '2018 Toyota Hilux Double Cab',
-        category: 'vehicles',
-        location: 'Gaborone, Botswana',
-        startingBid: 150000,
-        currentBid: 175000,
-        endDate: '2024-02-15T15:00:00Z',
-        startDate: '2024-01-15T10:00:00Z',
-        description: 'Well-maintained Toyota Hilux in excellent condition. Perfect for business or personal use.',
-        images: [
-            'vehicles/vehicles_2018-toyota-hilux-double-cab_gaborone_01.png'
-        ],
-        condition: 'Excellent',
-        mileage: '85000 km',
-        year: '2018',
-        fuelType: 'Diesel',
-        transmission: 'Manual',
-        contactInfo: {
-            name: 'Gaborone High Court',
-            email: 'court@gaborone.gov.bw',
-            phone: '+267 123 456 789'
-        },
-        sellerType: 'sheriff',
-        isActive: true,
-        badge: 'new',
-        valuations: {
-            marketValue: 180000,
-            reservePrice: 150000,
-            appraisalDate: '2024-01-10',
-            appraiser: 'Botswana Motor Vehicle Assessors',
-            reportUrl: 'assets/documents/vehicle-appraisal-001.pdf'
-        },
-        sheriffDetails: {
-            office: 'Gaborone High Court',
-            address: 'Government Enclave, Gaborone',
-            contactPerson: 'Sheriff John Motsumi',
-            phone: '+267 123 456 789',
-            email: 'sheriff@gaborone.gov.bw',
-            officeHours: 'Mon-Fri: 8:00-17:00',
-            inspectionSchedule: 'By appointment only'
-        },
-        documents: [
-            { type: 'registration', name: 'Vehicle Registration', url: 'assets/documents/vehicle-reg-001.pdf' },
-            { type: 'inspection', name: 'Roadworthy Certificate', url: 'assets/documents/roadworthy-001.pdf' },
-            { type: 'valuation', name: 'Valuation Report', url: 'assets/documents/vehicle-appraisal-001.pdf' }
-        ]
-    },
-    {
-        id: 'asset-002',
-        title: 'Massey Ferguson Tractor',
-        category: 'equipment',
-        location: 'Francistown, Botswana',
-        startingBid: 85000,
-        currentBid: 92000,
-        endDate: '2024-02-20T14:00:00Z',
-        startDate: '2024-01-20T09:00:00Z',
-        description: 'Heavy-duty farming tractor suitable for large-scale agricultural operations.',
-        images: [
-            'vehicles/Tractor.png'
-        ],
-        condition: 'Good',
-        year: '2015',
-        hours: '2500 hours',
-        fuelType: 'Diesel',
-        contactInfo: {
-            name: 'Francistown Sheriff Office',
-            email: 'sheriff@francistown.gov.bw',
-            phone: '+267 234 567 890'
-        },
-        sellerType: 'sheriff',
-        isActive: true,
-        badge: 'ending-soon'
-    },
-    {
-        id: 'asset-003',
         title: 'Commercial Building - CBD',
         category: 'property',
         location: 'Gaborone CBD, Botswana',
@@ -103,7 +30,7 @@ const SAMPLE_ASSETS = [
         badge: 'new'
     },
     {
-        id: 'asset-004',
+        id: 'asset-002',
         title: 'Suburban House - Phakalane',
         category: 'property',
         location: 'Phakalane, Gaborone',
@@ -131,129 +58,6 @@ const SAMPLE_ASSETS = [
         sellerType: 'sheriff',
         isActive: true,
         badge: null
-    },
-    {
-        id: 'asset-005',
-        title: 'Office Furniture Set',
-        category: 'furniture',
-        location: 'Maun, Botswana',
-        startingBid: 25000,
-        currentBid: 28000,
-        endDate: '2024-02-18T13:00:00Z',
-        startDate: '2024-01-18T09:00:00Z',
-        description: 'Complete office furniture set including desks, chairs, and filing cabinets.',
-        images: [
-            'furniture/furniture_office-furniture-set_maun_02.png'
-        ],
-        condition: 'Good',
-        pieces: '15',
-        material: 'Wood',
-        contactInfo: {
-            name: 'Maun District Court',
-            email: 'court@maun.gov.bw',
-            phone: '+267 456 789 012'
-        },
-        sellerType: 'sheriff',
-        isActive: true,
-        badge: 'ending-soon'
-    },
-    {
-        id: 'asset-006',
-        title: 'Computer Equipment Lot',
-        category: 'electronics',
-        location: 'Serowe, Botswana',
-        startingBid: 45000,
-        currentBid: 52000,
-        endDate: '2024-02-28T15:00:00Z',
-        startDate: '2024-01-28T10:00:00Z',
-        description: 'Lot of computer equipment including desktops, laptops, and peripherals.',
-        images: [
-            'electronics/electronics_computer-equipment-lot_serowe_01.png'
-        ],
-        condition: 'Good',
-        quantity: '25 units',
-        specifications: 'Various models and configurations',
-        contactInfo: {
-            name: 'Serowe Magistrate Court',
-            email: 'court@serowe.gov.bw',
-            phone: '+267 567 890 123'
-        },
-        sellerType: 'sheriff',
-        isActive: true,
-        badge: 'new'
-    },
-    {
-        id: 'asset-007',
-        title: '2019 Nissan Navara',
-        category: 'vehicles',
-        location: 'Kasane, Botswana',
-        startingBid: 180000,
-        currentBid: 195000,
-        endDate: '2024-03-05T11:00:00Z',
-        startDate: '2024-02-05T08:00:00Z',
-        description: 'Nissan Navara in excellent condition, perfect for both city and off-road use.',
-        images: [
-            'vehicles/vehicles_2019-nissan-navara_kasane_01.png'
-        ],
-        condition: 'Excellent',
-        mileage: '65000 km',
-        year: '2019',
-        fuelType: 'Diesel',
-        transmission: 'Automatic',
-        contactInfo: {
-            name: 'Kasane Sheriff Office',
-            email: 'sheriff@kasane.gov.bw',
-            phone: '+267 678 901 234'
-        },
-        sellerType: 'sheriff',
-        isActive: true,
-        badge: null
-    },
-    {
-        id: 'asset-008',
-        title: 'Industrial Generator',
-        category: 'equipment',
-        location: 'Lobatse, Botswana',
-        startingBid: 75000,
-        currentBid: 82000,
-        endDate: '2024-02-22T14:30:00Z',
-        startDate: '2024-01-22T09:30:00Z',
-        description: 'Heavy-duty industrial generator suitable for backup power or construction sites.',
-        images: [
-            'equipment/equipment_industrial-generator-50kva_lobatse_01.png'
-        ],
-        condition: 'Good',
-        capacity: '50 KVA',
-        fuelType: 'Diesel',
-        hours: '1200 hours',
-        contactInfo: {
-            name: 'Lobatse High Court',
-            email: 'court@lobatse.gov.bw',
-            phone: '+267 789 012 345'
-        },
-        sellerType: 'sheriff',
-        isActive: true,
-        badge: 'ending-soon',
-        valuations: {
-            marketValue: 90000,
-            reservePrice: 75000,
-            appraisalDate: '2024-01-20',
-            appraiser: 'Botswana Industrial Equipment Assessors',
-            reportUrl: 'assets/documents/generator-appraisal-008.pdf'
-        },
-        sheriffDetails: {
-            office: 'Lobatse High Court',
-            address: 'High Court Building, Lobatse',
-            contactPerson: 'Sheriff Mary Kgosi',
-            phone: '+267 789 012 345',
-            email: 'sheriff@lobatse.gov.bw',
-            officeHours: 'Mon-Fri: 8:00-17:00',
-            inspectionSchedule: 'By appointment only'
-        },
-        documents: [
-            { type: 'certificate', name: 'Equipment Certificate', url: 'assets/documents/equipment-cert-008.pdf' },
-            { type: 'valuation', name: 'Valuation Report', url: 'assets/documents/generator-appraisal-008.pdf' }
-        ]
     },
     // Additional Residential Properties
     {
@@ -452,64 +256,11 @@ const SAMPLE_ASSETS = [
             { type: 'valuation', name: 'Valuation Report', url: 'assets/documents/farm-appraisal-012.pdf' }
         ]
     },
-    // Additional Vehicles
-    {
-        id: 'asset-013',
-        title: '2020 BMW X5',
-        category: 'vehicles',
-        location: 'Francistown, Botswana',
-        startingBid: 280000,
-        currentBid: 320000,
-        endDate: '2024-03-05T12:00:00Z',
-        startDate: '2024-02-05T08:00:00Z',
-        description: 'Luxury SUV in pristine condition with full service history.',
-        images: [
-            'vehicles/vehicles_2020-bmw-x5_francistown_01.png'
-        ],
-        condition: 'Excellent',
-        mileage: '45000 km',
-        year: '2020',
-        fuelType: 'Petrol',
-        transmission: 'Automatic',
-        contactInfo: {
-            name: 'Francistown Sheriff Office',
-            email: 'sheriff@francistown.gov.bw',
-            phone: '+267 234 567 890'
-        },
-        sellerType: 'sheriff',
-        isActive: true,
-        badge: 'new',
-        valuations: {
-            marketValue: 350000,
-            reservePrice: 280000,
-            appraisalDate: '2024-02-01',
-            appraiser: 'Botswana Motor Vehicle Assessors',
-            reportUrl: 'assets/documents/bmw-appraisal-013.pdf'
-        },
-        sheriffDetails: {
-            office: 'Francistown Sheriff Office',
-            address: 'Sheriff Office, Francistown',
-            contactPerson: 'Sheriff Mary Kgosi',
-            phone: '+267 234 567 890',
-            email: 'sheriff@francistown.gov.bw',
-            officeHours: 'Mon-Fri: 8:00-17:00',
-            inspectionSchedule: 'By appointment only'
-        },
-        documents: [
-            { type: 'registration', name: 'Vehicle Registration', url: 'assets/documents/vehicle-reg-013.pdf' },
-            { type: 'inspection', name: 'Roadworthy Certificate', url: 'assets/documents/roadworthy-013.pdf' },
-            { type: 'valuation', name: 'Valuation Report', url: 'assets/documents/bmw-appraisal-013.pdf' }
-        ]
-    }
 ];
 
-// Categories for filtering
+// Categories for filtering - Distressed Properties Only
 const ASSET_CATEGORIES = [
-    { value: 'vehicles', label: 'Vehicles' },
-    { value: 'property', label: 'Property' },
-    { value: 'equipment', label: 'Equipment' },
-    { value: 'furniture', label: 'Furniture' },
-    { value: 'electronics', label: 'Electronics' }
+    { value: 'property', label: 'Property' }
 ];
 
 // Sort options

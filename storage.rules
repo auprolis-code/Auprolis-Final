@@ -1,0 +1,54 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && 
+             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.userType == 'admin';
+    }
+    
+    // Helper function to check if user is sheriff or admin
+    function isSellerOrAdmin() {
+      return isAuthenticated() && (
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.userType == 'sheriff' ||
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.userType == 'admin'
+      );
+    }
+    
+    // Listings folder - allow authenticated sellers and admins to upload
+    match /listings/{listingId} {
+      // Allow read for all authenticated users
+      allow read: if isAuthenticated();
+      
+      // Allow write (create/update) for sellers and admins
+      allow write: if isSellerOrAdmin();
+      
+      // Allow delete only for admins
+      allow delete: if isAdmin();
+    }
+    
+    // User uploads folder - users can manage their own files
+    match /users/{userId}/{allPaths=**} {
+      // Users can read/write their own files
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Admins can read/write any user's files
+      allow read, write: if isAdmin();
+    }
+    
+    // Public assets folder - all authenticated users can read, sellers/admins can write
+    match /assets/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isSellerOrAdmin();
+      allow delete: if isAdmin();
+    }
+  }
+}
+
+
+

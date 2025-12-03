@@ -39,6 +39,15 @@ if (typeof firebase !== 'undefined' && firebase.initializeApp) {
             console.warn('⚠️ Firebase Realtime Database SDK not loaded. This is optional and won\'t affect core functionality.');
         }
         
+        // Initialize Firebase Storage - only if SDK is loaded
+        let storage = null;
+        if (typeof firebase.storage === 'function') {
+            storage = firebase.storage();
+            console.log('✅ Firebase Storage initialized');
+        } else {
+            console.warn('⚠️ Firebase Storage SDK not loaded. Please include firebase-storage.js script.');
+        }
+        
         // Google Auth Provider
         const googleProvider = new firebase.auth.GoogleAuthProvider();
         
@@ -51,10 +60,14 @@ if (typeof firebase !== 'undefined' && firebase.initializeApp) {
         window.auth = auth;
         window.db = db; // Firestore
         window.realtimeDb = realtimeDb; // Realtime Database (may be null)
+        window.storage = storage; // Firebase Storage (may be null)
         window.googleProvider = googleProvider;
         
         console.log('✅ Firestore database initialized');
         console.log('✅ Firebase Authentication ready');
+        if (storage) {
+            console.log('✅ Firebase Storage ready');
+        }
     } catch (error) {
         console.error('❌ Firebase initialization failed:', error);
         console.error('Error details:', error.message);

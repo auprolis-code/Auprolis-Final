@@ -28,11 +28,7 @@ class ListingChatHandler {
                 type: 'select',
                 question: "Great! What category does this asset belong to?",
                 options: [
-                    { value: 'vehicles', label: '🚗 Vehicles' },
-                    { value: 'property', label: '🏠 Property' },
-                    { value: 'equipment', label: '⚙️ Equipment' },
-                    { value: 'furniture', label: '🪑 Furniture' },
-                    { value: 'electronics', label: '📱 Electronics' }
+                    { value: 'property', label: '🏠 Property' }
                 ],
                 required: true,
                 validate: (value) => {
@@ -725,6 +721,10 @@ class ListingChatHandler {
             
             if (saveResults.firebase) {
                 successMessage += "\n💾 Saved to Firestore";
+            }
+            
+            if (saveResults.storage) {
+                successMessage += "\n📁 Saved to Firebase Storage (all properties as JSON)";
             }
             
             if (saveResults.demo) {

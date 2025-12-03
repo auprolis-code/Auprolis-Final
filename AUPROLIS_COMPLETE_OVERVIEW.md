@@ -9,7 +9,7 @@
 **Auprolis** is a digital marketplace platform specifically designed for the Sheriff Asset Marketplace of Botswana. It serves as a trusted platform for verified asset sales, connecting buyers with sheriffs and institutions selling assets through auctions and direct sales.
 
 ### 1.2 Core Purpose
-- **For Buyers**: Browse, reserve, and bid on assets (properties, vehicles, equipment, furniture, electronics)
+- **For Buyers**: Browse, reserve, and bid on distressed properties (houses, buildings, land)
 - **For Sheriffs**: Create and manage asset listings, handle reservations, communicate with buyers
 - **For Admins**: Manage users, oversee system operations, view analytics
 
@@ -223,11 +223,7 @@ The platform supports **3 primary user types**:
 ### 4.2 Asset Management
 
 #### Asset Categories
-- **Property** (houses, land, buildings)
-- **Vehicles** (cars, trucks, motorcycles)
-- **Equipment** (machinery, tools)
-- **Furniture** (office, home furniture)
-- **Electronics** (computers, phones, appliances)
+- **Property** (houses, land, buildings) - Distressed properties only
 
 #### Asset Data Structure
 ```javascript
@@ -235,7 +231,7 @@ The platform supports **3 primary user types**:
   assetId: "unique-id",
   title: "Asset Title",
   description: "Detailed description",
-  category: "property" | "vehicles" | "equipment" | "furniture" | "electronics",
+  category: "property",
   location: "Gaborone",
   condition: "new" | "used" | "refurbished",
   price: 500000,

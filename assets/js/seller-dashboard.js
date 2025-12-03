@@ -6,6 +6,9 @@ class SellerDashboardHandler {
                     (typeof firebase !== 'undefined' && firebase.auth ? firebase.auth() : null);
         this.db = typeof demoFirestore !== 'undefined' ? demoFirestore : 
                   (typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null);
+        // Use global storage if available, otherwise try to initialize
+        this.storage = typeof window !== 'undefined' && window.storage ? window.storage :
+                      (typeof firebase !== 'undefined' && firebase.storage ? firebase.storage() : null);
         this.user = null;
         this.userData = null;
         this.listings = [];
@@ -597,7 +600,7 @@ class SellerDashboardHandler {
                 {
                     id: 'txn-002',
                     listingId: 'listing-004',
-                    listingTitle: 'Office Furniture Set',
+                    listingTitle: 'Modern Apartment - CBD',
                     buyerName: 'Mary Johnson',
                     amount: 28000,
                     commission: 1400,
@@ -834,32 +837,131 @@ class SellerDashboardHandler {
     }
 
     // Form handling
-    handleCreateListing(e) {
+    async handleCreateListing(e) {
         e.preventDefault();
         
-        const formData = new FormData(e.target);
-        const listingData = Object.fromEntries(formData.entries());
+        const form = e.target;
+        const submitButton = form.querySelector('button[type="submit"]');
+        const originalButtonText = submitButton ? submitButton.textContent : 'Create Listing';
         
-        // Add additional fields
-        listingData.id = `listing-${Date.now()}`;
-        listingData.sellerId = this.user.uid;
-        listingData.sellerName = this.user.displayName || this.user.email;
-        listingData.status = 'pending';
-        listingData.createdAt = new Date();
-        listingData.viewCount = 0;
-        listingData.startingBid = parseInt(listingData.startingBid) || 0;
-        // Set currentBid equal to startingBid for backward compatibility (platform uses reservations, not bidding)
-        listingData.currentBid = listingData.startingBid;
+        // Show loading state
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Creating...';
+        }
+        
+        try {
+            const formData = new FormData(e.target);
+            const listingData = Object.fromEntries(formData.entries());
+            
+            // Add additional fields
+            listingData.id = `listing-${Date.now()}`;
+            listingData.sellerId = this.user.uid;
+            listingData.sellerName = this.user.displayName || this.user.email;
+            listingData.sellerEmail = this.user.email || '';
+            listingData.status = 'pending'; // Seller listings need admin approval
+            listingData.createdAt = new Date().toISOString();
+            listingData.viewCount = 0;
+            listingData.startingBid = parseInt(listingData.startingBid) || 0;
+            // Set currentBid equal to startingBid for backward compatibility (platform uses reservations, not bidding)
+            listingData.currentBid = listingData.startingBid;
 
-        // In a real app, this would save to Firebase
-        console.log('Creating listing:', listingData);
-        
-        this.showMessage('Listing created successfully! It will be reviewed before going live.', 'success');
-        this.closeCreateListingModal();
-        
-        // Refresh listings
-        this.loadListings();
-        this.renderListings();
+            // Save to Firebase Firestore
+            const saveResults = await this.saveListing(listingData);
+            
+            // Add to local listings array
+            this.listings.push(listingData);
+            
+            // Show success message
+            let successMessage = 'Listing created successfully! It will be reviewed before going live.';
+            if (saveResults.firebase) {
+                successMessage += ' Saved to Firestore.';
+            }
+            if (saveResults.storage) {
+                successMessage += ' Saved to Firebase Storage.';
+            }
+            
+            this.showMessage(successMessage, 'success');
+            this.closeCreateListingModal();
+            
+            // Refresh listings
+            this.loadListings();
+            this.renderListings();
+        } catch (error) {
+            console.error('Error creating listing:', error);
+            this.showMessage('Error creating listing. Please try again.', 'error');
+        } finally {
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = originalButtonText;
+            }
+        }
+    }
+
+    async saveListing(listingData) {
+        const results = {
+            demo: false,
+            firebase: false,
+            storage: false
+        };
+
+        // Save to demo data
+        if (typeof DEMO_ASSETS !== 'undefined') {
+            DEMO_ASSETS.push(listingData);
+            if (typeof SAMPLE_ASSETS !== 'undefined') {
+                SAMPLE_ASSETS.push(listingData);
+            }
+            results.demo = true;
+        }
+
+        // Save to Firebase Firestore
+        if (this.db && this.db.collection) {
+            try {
+                await this.db.collection('listings').add(listingData);
+                results.firebase = true;
+                console.log('✅ Listing saved to Firestore:', listingData.id);
+            } catch (error) {
+                console.error('❌ Error saving listing to Firestore:', error);
+                throw error;
+            }
+        } else {
+            console.warn('⚠️ Firestore not available');
+        }
+
+        // Save all properties to Firebase Storage as JSON file
+        if (this.storage) {
+            try {
+                const listingId = listingData.id || `listing-${Date.now()}`;
+                const storageRef = this.storage.ref(`listings/${listingId}.json`);
+                
+                // Convert listing data to JSON string
+                const jsonData = JSON.stringify(listingData, null, 2);
+                const blob = new Blob([jsonData], { type: 'application/json' });
+                
+                // Upload to Firebase Storage
+                console.log('📤 Uploading listing to Firebase Storage...', { listingId, path: `listings/${listingId}.json` });
+                const snapshot = await storageRef.put(blob);
+                const downloadURL = await snapshot.ref.getDownloadURL();
+                results.storage = true;
+                console.log('✅ Listing properties saved to Firebase Storage:', {
+                    path: `listings/${listingId}.json`,
+                    downloadURL: downloadURL,
+                    size: blob.size
+                });
+            } catch (error) {
+                console.error('❌ Error saving listing to Firebase Storage:', error);
+                console.error('Error details:', {
+                    code: error.code,
+                    message: error.message,
+                    stack: error.stack
+                });
+                // Don't throw - storage is supplementary
+            }
+        } else {
+            console.warn('⚠️ Firebase Storage not available. Make sure firebase-storage.js is loaded.');
+        }
+
+        return results;
     }
 
     handleImageUpload(e) {

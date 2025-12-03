@@ -7,6 +7,9 @@ class AdminDashboardHandler {
         this.db = typeof demoFirestore !== 'undefined' ? demoFirestore : 
                   (typeof firebase !== 'undefined' && firebase.firestore ? firebase.firestore() : null);
         this.realtimeDb = typeof realtimeDbService !== 'undefined' ? realtimeDbService : null;
+        // Use global storage if available, otherwise try to initialize
+        this.storage = typeof window !== 'undefined' && window.storage ? window.storage :
+                      (typeof firebase !== 'undefined' && firebase.storage ? firebase.storage() : null);
         this.user = null;
         this.userData = null;
         this.listings = [];
@@ -864,8 +867,17 @@ class AdminDashboardHandler {
             // Add to local listings array
             this.listings.push(listingData);
             
-            // Show success message with Google Sheets option
+            // Show success message with storage details
             let successMessage = 'Listing created successfully!';
+            if (saveResults.firebase) {
+                successMessage += ' Saved to Firestore.';
+            }
+            if (saveResults.storage) {
+                successMessage += ' Saved to Firebase Storage.';
+            }
+            if (saveResults.realtimeDb) {
+                successMessage += ' Saved to Realtime Database.';
+            }
             if (typeof googleSheetsService !== 'undefined') {
                 const copySuccess = await googleSheetsService.copyListingToClipboard(listingData);
                 if (copySuccess) {
@@ -1012,6 +1024,7 @@ class AdminDashboardHandler {
             demo: false,
             firebase: false,
             realtimeDb: false,
+            storage: false,
             googleSheetsReady: false
         };
 
@@ -1052,9 +1065,43 @@ class AdminDashboardHandler {
             try {
                 await this.db.collection('listings').add(listingData);
                 results.firebase = true;
+                console.log('✅ Listing saved to Firestore');
             } catch (error) {
-                console.error('Error saving listing to Firebase:', error);
+                console.error('Error saving listing to Firestore:', error);
             }
+        }
+
+        // Save all properties to Firebase Storage as JSON file
+        if (this.storage) {
+            try {
+                const listingId = listingData.id || listingData.assetId || `listing-${Date.now()}`;
+                const storageRef = this.storage.ref(`listings/${listingId}.json`);
+                
+                // Convert listing data to JSON string
+                const jsonData = JSON.stringify(listingData, null, 2);
+                const blob = new Blob([jsonData], { type: 'application/json' });
+                
+                // Upload to Firebase Storage
+                console.log('📤 Uploading listing to Firebase Storage...', { listingId, path: `listings/${listingId}.json` });
+                const snapshot = await storageRef.put(blob);
+                const downloadURL = await snapshot.ref.getDownloadURL();
+                results.storage = true;
+                console.log('✅ Listing properties saved to Firebase Storage:', {
+                    path: `listings/${listingId}.json`,
+                    downloadURL: downloadURL,
+                    size: blob.size
+                });
+            } catch (error) {
+                console.error('❌ Error saving listing to Firebase Storage:', error);
+                console.error('Error details:', {
+                    code: error.code,
+                    message: error.message,
+                    stack: error.stack
+                });
+                // Don't throw - storage is supplementary
+            }
+        } else {
+            console.warn('⚠️ Firebase Storage not available. Make sure firebase-storage.js is loaded.');
         }
 
         // Prepare for Google Sheets (data is copied to clipboard)

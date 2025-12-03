@@ -84,41 +84,9 @@ const DEMO_USERS = [
 ];
 
 const DEMO_ASSETS = [
+    // Distressed Properties Only - Removed vehicles, equipment, furniture, and electronics
     {
         id: 'asset-001',
-        title: '2018 Toyota Hilux Double Cab',
-        category: 'vehicles',
-        location: 'Gaborone, Botswana',
-        startingBid: 150000,
-        currentBid: 175000,
-        reservePrice: 150000,
-        startDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-        endDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000),
-        status: 'active',
-        condition: 'Excellent',
-        mileage: '85000 km',
-        year: '2018',
-        fuelType: 'Diesel',
-        transmission: 'Manual',
-        description: 'Well-maintained Toyota Hilux Double Cab in excellent condition. Perfect for both city and off-road use. Regular servicing and low mileage. One owner.',
-        images: [
-            'vehicles/vehicles_2018-toyota-hilux-double-cab_gaborone_01.png'
-        ],
-        sellerId: 'demo-user-2',
-        sellerName: 'Gaborone High Court',
-        contactInfo: {
-            name: 'Gaborone High Court',
-            email: 'court@gaborone.gov.bw',
-            phone: '+267 123 456 789'
-        },
-        bidCount: 12,
-        viewCount: 145,
-        createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-        badge: 'new',
-        sellerType: 'sheriff'
-    },
-    {
-        id: 'asset-002',
         title: 'Commercial Building - CBD',
         category: 'property',
         location: 'Gaborone CBD, Botswana',
@@ -150,40 +118,40 @@ const DEMO_ASSETS = [
         sellerType: 'institution'
     },
     {
-        id: 'asset-003',
-        title: 'Massey Ferguson Tractor',
-        category: 'equipment',
-        location: 'Francistown, Botswana',
-        startingBid: 85000,
-        currentBid: 92000,
-        reservePrice: 85000,
-        startDate: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000),
-        endDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+        id: 'asset-002',
+        title: 'Suburban House - Phakalane',
+        category: 'property',
+        location: 'Gaborone CBD, Botswana',
+        startingBid: 2500000,
+        currentBid: 2750000,
+        reservePrice: 2500000,
+        startDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
         status: 'active',
-        condition: 'Good',
-        year: '2015',
-        hours: '2500 hours',
-        fuelType: 'Diesel',
-        description: 'Heavy-duty farming tractor suitable for large-scale agricultural operations. Well maintained with regular servicing. Comes with farming implements.',
+        condition: 'Excellent',
+        size: '500 sqm',
+        floors: '2',
+        parking: '10 spaces',
+        description: 'Prime commercial property in the heart of Gaborone CBD. Modern facilities, excellent location, high visibility. Ideal for retail or office space.',
         images: [
-            'vehicles/Tractor.png'
+            'property/property_commercial-building-cbd_gaborone_01.png'
         ],
         sellerId: 'demo-user-2',
-        sellerName: 'Francistown Sheriff Office',
+        sellerName: 'Botswana Development Corporation',
         contactInfo: {
-            name: 'Francistown Sheriff Office',
-            email: 'sheriff@francistown.gov.bw',
-            phone: '+267 234 567 890'
+            name: 'Botswana Development Corporation',
+            email: 'properties@bdc.co.bw',
+            phone: '+267 345 678 901'
         },
-        bidCount: 15,
-        viewCount: 167,
-        createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        bidCount: 8,
+        viewCount: 89,
+        createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
         badge: 'ending-soon',
-        sellerType: 'sheriff'
+        sellerType: 'institution'
     },
     {
-        id: 'asset-004',
-        title: 'Suburban House - Phakalane',
+        id: 'asset-003',
+        title: 'Luxury Villa - Phakalane',
         category: 'property',
         location: 'Phakalane, Gaborone',
         startingBid: 1200000,
@@ -218,134 +186,8 @@ const DEMO_ASSETS = [
         sellerType: 'sheriff'
     },
     {
-        id: 'asset-005',
-        title: 'Office Furniture Set',
-        category: 'furniture',
-        location: 'Maun, Botswana',
-        startingBid: 25000,
-        currentBid: 28000,
-        reservePrice: 25000,
-        startDate: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
-        endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
-        status: 'active',
-        condition: 'Good',
-        pieces: '15',
-        material: 'Wood',
-        description: 'Complete office furniture set including desks, chairs, filing cabinets, and conference table. Good condition, ready for use.',
-        images: [
-            'furniture/furniture_office-furniture-set_maun_02.png'
-        ],
-        sellerId: 'demo-user-2',
-        sellerName: 'Maun District Court',
-        contactInfo: {
-            name: 'Maun District Court',
-            email: 'court@maun.gov.bw',
-            phone: '+267 456 789 012'
-        },
-        bidCount: 4,
-        viewCount: 42,
-        createdAt: new Date(Date.now() - 22 * 24 * 60 * 60 * 1000),
-        sellerType: 'sheriff'
-    },
-    {
-        id: 'asset-006',
-        title: 'Computer Equipment Lot',
-        category: 'electronics',
-        location: 'Serowe, Botswana',
-        startingBid: 45000,
-        currentBid: 52000,
-        reservePrice: 45000,
-        startDate: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
-        endDate: new Date(Date.now() + 22 * 24 * 60 * 60 * 1000),
-        status: 'active',
-        condition: 'Good',
-        quantity: '25 units',
-        specifications: 'Various models and configurations',
-        description: 'Lot of computer equipment including desktops, laptops, and peripherals. All units tested and in working condition.',
-        images: [
-            'electronics/electronics_computer-equipment-lot_serowe_01.png'
-        ],
-        sellerId: 'demo-user-2',
-        sellerName: 'Serowe Magistrate Court',
-        contactInfo: {
-            name: 'Serowe Magistrate Court',
-            email: 'court@serowe.gov.bw',
-            phone: '+267 567 890 123'
-        },
-        bidCount: 7,
-        viewCount: 73,
-        createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-        badge: 'new',
-        sellerType: 'sheriff'
-    },
-    {
-        id: 'asset-007',
-        title: '2019 Nissan Navara',
-        category: 'vehicles',
-        location: 'Kasane, Botswana',
-        startingBid: 180000,
-        currentBid: 195000,
-        reservePrice: 180000,
-        startDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-        endDate: new Date(Date.now() + 27 * 24 * 60 * 60 * 1000),
-        status: 'active',
-        condition: 'Excellent',
-        mileage: '65000 km',
-        year: '2019',
-        fuelType: 'Diesel',
-        transmission: 'Automatic',
-        description: 'Nissan Navara in excellent condition, perfect for both city and off-road use. Low mileage, one owner, full service history.',
-        images: [
-            'vehicles/vehicles_2019-nissan-navara_kasane_01.png'
-        ],
-        sellerId: 'demo-user-2',
-        sellerName: 'Kasane Sheriff Office',
-        contactInfo: {
-            name: 'Kasane Sheriff Office',
-            email: 'sheriff@kasane.gov.bw',
-            phone: '+267 678 901 234'
-        },
-        bidCount: 9,
-        viewCount: 98,
-        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-        badge: 'new',
-        sellerType: 'sheriff'
-    },
-    {
-        id: 'asset-008',
-        title: 'Industrial Generator',
-        category: 'equipment',
-        location: 'Lobatse, Botswana',
-        startingBid: 75000,
-        currentBid: 82000,
-        reservePrice: 75000,
-        startDate: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000),
-        endDate: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000),
-        status: 'active',
-        condition: 'Good',
-        capacity: '50 KVA',
-        fuelType: 'Diesel',
-        hours: '1200 hours',
-        description: 'Heavy-duty industrial generator suitable for backup power or construction sites. Well maintained with regular servicing.',
-        images: [
-            'equipment/equipment_industrial-generator-50kva_lobatse_01.png'
-        ],
-        sellerId: 'demo-user-2',
-        sellerName: 'Lobatse High Court',
-        contactInfo: {
-            name: 'Lobatse High Court',
-            email: 'court@lobatse.gov.bw',
-            phone: '+267 789 012 345'
-        },
-        bidCount: 11,
-        viewCount: 124,
-        createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
-        badge: 'ending-soon',
-        sellerType: 'sheriff'
-    },
-    {
-        id: 'asset-009',
-        title: 'Luxury Villa - Phakalane',
+        id: 'asset-004',
+        title: 'Modern Apartment - CBD',
         category: 'property',
         location: 'Phakalane, Gaborone',
         startingBid: 2800000,
@@ -477,43 +319,10 @@ const DEMO_ASSETS = [
         badge: 'new',
         sellerType: 'sheriff'
     },
-    {
-        id: 'asset-013',
-        title: '2020 BMW X5',
-        category: 'vehicles',
-        location: 'Francistown, Botswana',
-        startingBid: 280000,
-        currentBid: 320000,
-        reservePrice: 280000,
-        startDate: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
-        endDate: new Date(Date.now() + 24 * 24 * 60 * 60 * 1000),
-        status: 'active',
-        condition: 'Excellent',
-        mileage: '45000 km',
-        year: '2020',
-        fuelType: 'Petrol',
-        transmission: 'Automatic',
-        description: 'Luxury SUV in pristine condition with full service history. All features working perfectly, like new condition.',
-        images: [
-            'vehicles/vehicles_2020-bmw-x5_francistown_01.png'
-        ],
-        sellerId: 'demo-user-2',
-        sellerName: 'Francistown Sheriff Office',
-        contactInfo: {
-            name: 'Francistown Sheriff Office',
-            email: 'sheriff@francistown.gov.bw',
-            phone: '+267 234 567 890'
-        },
-        bidCount: 13,
-        viewCount: 189,
-        createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
-        badge: 'new',
-        sellerType: 'sheriff'
-    }
 ];
 
 const DEMO_BIDS = [
-    // Bids for asset-001 (Toyota Hilux)
+    // Bids for asset-001 (Commercial Building - CBD)
     {
         id: 'bid-001',
         listingId: 'asset-001',
@@ -521,7 +330,7 @@ const DEMO_BIDS = [
         bidderId: 'demo-user-1',
         bidderName: 'Demo Buyer',
         bidderEmail: 'buyer@demo.com',
-        amount: 175000,
+        amount: 2750000,
         timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
         status: 'winning',
         isWinning: true,
@@ -534,7 +343,7 @@ const DEMO_BIDS = [
         bidderId: 'demo-user-4',
         bidderName: 'John Smith',
         bidderEmail: 'john.smith@demo.com',
-        amount: 170000,
+        amount: 2700000,
         timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000),
         status: 'outbid',
         isWinning: false,
@@ -547,13 +356,13 @@ const DEMO_BIDS = [
         bidderId: 'demo-user-5',
         bidderName: 'Mary Johnson',
         bidderEmail: 'mary.johnson@demo.com',
-        amount: 165000,
+        amount: 2650000,
         timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
         status: 'outbid',
         isWinning: false,
         isActive: false
     },
-    // Bids for asset-002 (Commercial Building)
+    // Bids for asset-002 (Suburban House - Phakalane)
     {
         id: 'bid-004',
         listingId: 'asset-002',
@@ -561,7 +370,7 @@ const DEMO_BIDS = [
         bidderId: 'demo-user-1',
         bidderName: 'Demo Buyer',
         bidderEmail: 'buyer@demo.com',
-        amount: 2750000,
+        amount: 1350000,
         timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
         status: 'winning',
         isWinning: true,
@@ -574,13 +383,13 @@ const DEMO_BIDS = [
         bidderId: 'demo-user-6',
         bidderName: 'David Brown',
         bidderEmail: 'david.brown@demo.com',
-        amount: 2700000,
+        amount: 1300000,
         timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
         status: 'outbid',
         isWinning: false,
         isActive: false
     },
-    // Bids for asset-003 (Tractor)
+    // Bids for asset-003 (Luxury Villa - Phakalane)
     {
         id: 'bid-006',
         listingId: 'asset-003',
@@ -588,7 +397,7 @@ const DEMO_BIDS = [
         bidderId: 'demo-user-4',
         bidderName: 'John Smith',
         bidderEmail: 'john.smith@demo.com',
-        amount: 92000,
+        amount: 3200000,
         timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000),
         status: 'winning',
         isWinning: true,
@@ -601,13 +410,13 @@ const DEMO_BIDS = [
         bidderId: 'demo-user-1',
         bidderName: 'Demo Buyer',
         bidderEmail: 'buyer@demo.com',
-        amount: 90000,
+        amount: 3100000,
         timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
         status: 'outbid',
         isWinning: false,
         isActive: false
     },
-    // Bids for asset-004 (Suburban House)
+    // Bids for asset-004 (Modern Apartment - CBD)
     {
         id: 'bid-008',
         listingId: 'asset-004',
@@ -615,108 +424,28 @@ const DEMO_BIDS = [
         bidderId: 'demo-user-5',
         bidderName: 'Mary Johnson',
         bidderEmail: 'mary.johnson@demo.com',
-        amount: 1350000,
+        amount: 1100000,
         timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000),
         status: 'winning',
-        isWinning: true,
-        isActive: true
-    },
-    // Bids for asset-009 (Luxury Villa)
-    {
-        id: 'bid-009',
-        listingId: 'asset-009',
-        assetId: 'asset-009',
-        bidderId: 'demo-user-1',
-        bidderName: 'Demo Buyer',
-        bidderEmail: 'buyer@demo.com',
-        amount: 3200000,
-        timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000),
-        status: 'winning',
-        isWinning: true,
-        isActive: true
-    },
-    {
-        id: 'bid-010',
-        listingId: 'asset-009',
-        assetId: 'asset-009',
-        bidderId: 'demo-user-6',
-        bidderName: 'David Brown',
-        bidderEmail: 'david.brown@demo.com',
-        amount: 3100000,
-        timestamp: new Date(Date.now() - 10 * 60 * 60 * 1000),
-        status: 'outbid',
-        isWinning: false,
-        isActive: false
-    },
-    // Bids for asset-013 (BMW X5)
-    {
-        id: 'bid-011',
-        listingId: 'asset-013',
-        assetId: 'asset-013',
-        bidderId: 'demo-user-1',
-        bidderName: 'Demo Buyer',
-        bidderEmail: 'buyer@demo.com',
-        amount: 320000,
-        timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000),
-        status: 'winning',
-        isWinning: true,
-        isActive: true
-    },
-    {
-        id: 'bid-012',
-        listingId: 'asset-013',
-        assetId: 'asset-013',
-        bidderId: 'demo-user-4',
-        bidderName: 'John Smith',
-        bidderEmail: 'john.smith@demo.com',
-        amount: 300000,
-        timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000),
-        status: 'outbid',
-        isWinning: false,
-        isActive: false
-    },
-    // Historical completed bids
-    {
-        id: 'bid-013',
-        listingId: 'asset-007',
-        assetId: 'asset-007',
-        bidderId: 'demo-user-1',
-        bidderName: 'Demo Buyer',
-        bidderEmail: 'buyer@demo.com',
-        amount: 195000,
-        timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
-        status: 'won',
-        isWinning: true,
-        isActive: false
-    },
-    {
-        id: 'bid-014',
-        listingId: 'asset-008',
-        assetId: 'asset-008',
-        bidderId: 'demo-user-1',
-        bidderName: 'Demo Buyer',
-        bidderEmail: 'buyer@demo.com',
-        amount: 82000,
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        status: 'pending',
         isWinning: true,
         isActive: true
     }
 ];
 
 const DEMO_TRANSACTIONS = [
+    // Updated to only include property transactions
     {
         id: 'txn-001',
-        listingId: 'asset-007',
-        listingTitle: '2019 Nissan Navara',
+        listingId: 'asset-002',
+        listingTitle: 'Suburban House - Phakalane',
         buyerId: 'demo-user-1',
         buyerName: 'Demo Buyer',
         buyerEmail: 'buyer@demo.com',
         sellerId: 'demo-user-2',
-        sellerName: 'Kasane Sheriff Office',
-        amount: 195000,
-        commission: 9750,
-        netAmount: 185250,
+        sellerName: 'Gaborone High Court',
+        amount: 1350000,
+        commission: 67500,
+        netAmount: 1282500,
         status: 'completed',
         date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
         paymentMethod: 'Bank Transfer',
@@ -724,16 +453,16 @@ const DEMO_TRANSACTIONS = [
     },
     {
         id: 'txn-002',
-        listingId: 'asset-008',
-        listingTitle: 'Industrial Generator',
+        listingId: 'asset-004',
+        listingTitle: 'Modern Apartment - CBD',
         buyerId: 'demo-user-4',
         buyerName: 'John Smith',
         buyerEmail: 'john.smith@demo.com',
         sellerId: 'demo-user-2',
-        sellerName: 'Lobatse High Court',
-        amount: 82000,
-        commission: 4100,
-        netAmount: 77900,
+        sellerName: 'Gaborone High Court',
+        amount: 1100000,
+        commission: 55000,
+        netAmount: 1045000,
         status: 'pending',
         date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
         paymentMethod: 'Credit Card',
@@ -741,63 +470,29 @@ const DEMO_TRANSACTIONS = [
     },
     {
         id: 'txn-003',
-        listingId: 'asset-005',
-        listingTitle: 'Office Furniture Set',
+        listingId: 'asset-001',
+        listingTitle: 'Commercial Building - CBD',
         buyerId: 'demo-user-5',
         buyerName: 'Mary Johnson',
         buyerEmail: 'mary.johnson@demo.com',
         sellerId: 'demo-user-2',
-        sellerName: 'Maun District Court',
-        amount: 28000,
-        commission: 1400,
-        netAmount: 26600,
+        sellerName: 'Botswana Development Corporation',
+        amount: 2750000,
+        commission: 137500,
+        netAmount: 2612500,
         status: 'completed',
         date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
         paymentMethod: 'Bank Transfer',
         reference: 'TXN-003-2024'
-    },
-    {
-        id: 'txn-004',
-        listingId: 'asset-006',
-        listingTitle: 'Computer Equipment Lot',
-        buyerId: 'demo-user-6',
-        buyerName: 'David Brown',
-        buyerEmail: 'david.brown@demo.com',
-        sellerId: 'demo-user-2',
-        sellerName: 'Serowe Magistrate Court',
-        amount: 52000,
-        commission: 2600,
-        netAmount: 49400,
-        status: 'completed',
-        date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-        paymentMethod: 'Bank Transfer',
-        reference: 'TXN-004-2024'
-    },
-    {
-        id: 'txn-005',
-        listingId: 'asset-001',
-        listingTitle: '2018 Toyota Hilux Double Cab',
-        buyerId: 'demo-user-1',
-        buyerName: 'Demo Buyer',
-        buyerEmail: 'buyer@demo.com',
-        sellerId: 'demo-user-2',
-        sellerName: 'Gaborone High Court',
-        amount: 175000,
-        commission: 8750,
-        netAmount: 166250,
-        status: 'pending',
-        date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-        paymentMethod: 'Pending',
-        reference: 'TXN-005-2024'
     }
 ];
 
-// Watchlist items for demo buyer (demo-user-1)
+// Watchlist items for demo buyer (demo-user-1) - Properties only
 const DEMO_WATCHLIST = [
     {
         id: 'watch-001',
         userId: 'demo-user-1',
-        assetId: 'asset-009',
+        assetId: 'asset-003',
         addedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
         notes: 'Luxury property - potential investment',
         alerts: {
@@ -821,9 +516,9 @@ const DEMO_WATCHLIST = [
     {
         id: 'watch-003',
         userId: 'demo-user-1',
-        assetId: 'asset-013',
+        assetId: 'asset-002',
         addedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-        notes: 'Premium vehicle for personal use',
+        notes: 'Family home in good location',
         alerts: {
             priceChange: false,
             endingSoon: true,
@@ -832,7 +527,7 @@ const DEMO_WATCHLIST = [
     }
 ];
 
-// Reservations/Bookings data
+// Reservations/Bookings data - Properties only
 const DEMO_RESERVATIONS = [
     {
         id: 'reservation-001',
@@ -842,7 +537,7 @@ const DEMO_RESERVATIONS = [
         userName: 'Demo Buyer',
         userEmail: 'buyer@demo.com',
         userPhone: '+267 712 345 678',
-        notes: 'Interested in viewing the vehicle',
+        notes: 'Interested in viewing the property',
         timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
         status: 'pending',
         isActive: true,
@@ -864,8 +559,8 @@ const DEMO_RESERVATIONS = [
     },
     {
         id: 'reservation-003',
-        listingId: 'asset-009',
-        assetId: 'asset-009',
+        listingId: 'asset-003',
+        assetId: 'asset-003',
         userId: 'demo-user-4',
         userName: 'John Smith',
         userEmail: 'john.smith@demo.com',

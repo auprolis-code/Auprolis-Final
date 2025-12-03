@@ -3,8 +3,8 @@
 class LandingPageAssets {
     constructor() {
         this.assets = SAMPLE_ASSETS || [];
-        this.categories = ['vehicles', 'property', 'equipment', 'furniture', 'electronics'];
-        this.itemsPerCategory = 2; // 10 total items / 5 categories = 2 per category
+        this.categories = ['property'];
+        this.itemsPerCategory = 10; // Show all property items
         this.init();
     }
 
